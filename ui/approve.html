@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+
+<html data-bs-theme="dark" data-theme="binance" lang="en">
+<head><meta charset="utf-8"/><script src="../tg/frame-bridge.js"></script><meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/><link href="vendor/bootstrap.min.css" rel="stylesheet"/><link href="app.css" rel="stylesheet"/><link href="../tg/tg-ui.css" rel="stylesheet"/><title>FutureWallet - Confirm</title>
+<style>body{width:100%;height:auto;min-height:660px}</style></head>
+<body class="mobile approve-page">
+<div class="appbar d-flex align-items-center gap-2 px-2 py-2">
+<button class="netbtn btn btn-sm btn-dark rounded-pill border d-inline-flex align-items-center gap-1"><span class="netdot" id="netDot"></span><span id="netName">—</span></button>
+<div class="acctbtn"><span class="meta"><b id="acctName">—</b><small id="acctAddr"></small></span></div>
+</div>
+<div class="screen">
+<div class="center" style="margin-bottom:10px">
+<div class="muted" id="origin" style="word-break:break-all">—</div>
+<h1 class="fw-semibold" id="title" style="margin-top:6px">Request</h1>
+</div>
+<div class="stack" id="alerts" style="margin-bottom:12px"></div>
+<div id="body"></div>
+<div class="card alt hidden border-0 shadow-sm" id="gasCard" style="margin-top:12px">
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>Estimated fee</span><b id="feeText">—</b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>Speed</span><b><span id="gasLabel">Market</span> <button class="link btn btn-link text-decoration-none" id="editGas" style="padding:0">Edit</button></b></div>
+</div>
+<div class="card hidden border-0 shadow-sm" id="unlockCard" style="margin-top:12px">
+<label>Password</label><input class="form-control" id="pw" type="password"/>
+</div>
+</div>
+<div class="footer btnrow">
+<button class="plain btn btn-outline-light rounded-pill" id="reject">Reject</button>
+<button class="primary btn btn-primary rounded-pill fw-semibold" id="approve">Confirm</button>
+</div>
+<div class="sheet hidden" id="sheetGas"><div class="inner card border-0 shadow-lg p-3"><div class="handle"></div>
+<h2 class="fw-semibold">Edit gas</h2><div id="gasOpts"></div>
+<details style="margin-top:8px"><summary class="muted" style="cursor:pointer">Advanced</summary>
+<label>Gas limit</label><input class="form-control" id="gasLimitIn" inputmode="numeric"/>
+<label>Max fee (gwei)</label><input class="form-control" id="maxFeeIn" inputmode="decimal"/>
+<label>Priority fee (gwei)</label><input class="form-control" id="tipIn" inputmode="decimal"/>
+<label>Nonce</label><input class="form-control" id="nonceIn" inputmode="numeric"/>
+</details>
+<button class="primary btn btn-primary rounded-pill fw-semibold" id="gasSave" style="width:100%;margin-top:12px">Save</button>
+<button class="link btn btn-link text-decoration-none" id="gasCancel" style="width:100%">Cancel</button></div></div>
+<script src="approve.js" type="module"></script>
+</body>
+</html>

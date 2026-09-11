@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+
+<html data-bs-theme="dark" data-theme="dark" lang="en">
+<head>
+<script src="../tg/frame-bridge.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
+<link href="vendor/bootstrap.min.css" rel="stylesheet"/><link href="app.css" rel="stylesheet"/><link href="../tg/tg-ui.css" rel="stylesheet"/>
+<title>FutureWallet</title>
+</head>
+<body class="mobile">
+<!-- ============ TOP BAR ============ -->
+<div class="appbar hidden d-flex align-items-center gap-2 px-2 py-2" id="appbar">
+<div class="acctbtn" id="acctBtn">
+<img alt="" class="ident" height="30" id="acctAvatar" width="30"/>
+<span class="meta"><b id="acctName">—</b><small id="acctAddr" style="display:none">—</small></span>
+<span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
+</div>
+<button class="netbtn btn btn-sm btn-dark rounded-pill border d-inline-flex align-items-center gap-1" id="netBtn"><span class="netdot" id="netDot"></span><span id="netName" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span></button>
+</div>
+<!-- ============ ONBOARDING ============ -->
+<div class="screen hidden" data-view="intro" style="display:flex;flex-direction:column;height:100%">
+<div class="d-flex justify-content-end" style="padding:4px 4px 0"><button class="link btn btn-link text-decoration-none" id="introSkip">Skip</button></div>
+<div class="d-flex flex-column align-items-center justify-content-center text-center" style="flex:1;padding:0 10px" id="introSlide"></div>
+<div class="d-flex justify-content-center gap-2" id="introDots" style="margin-bottom:24px"></div>
+<div style="padding:0 4px 24px">
+<button class="primary btn btn-primary rounded-pill fw-semibold" id="introNext" style="width:100%;padding:14px 0">Next</button>
+</div>
+</div>
+<div class="screen hidden" data-view="welcome" style="display:flex;flex-direction:column;justify-content:center;height:100%">
+<div class="center">
+<div class="brand-badge" style="margin-bottom:18px"><span data-icon="wallet" data-icon-size="30"></span></div>
+<h1 class="fw-semibold">Welcome to<br/>FutureWallet</h1>
+<p class="muted">Your gateway to Web3. Secure your assets, explore dApps.</p>
+</div>
+<div class="stack" style="margin-top:28px">
+<div class="rowitem list-group-item list-group-item-action bg-transparent d-flex align-items-center gap-2 border-0 border-bottom" id="btnCreate">
+<div class="icon-tile md" data-icon="plus" data-icon-size="16" style="background:var(--accent);color:#0e1014"></div>
+<div class="grow"><div class="title">Create new wallet</div><div class="sub" style="font-family:inherit">Generate a fresh recovery phrase</div></div>
+<span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span>
+</div>
+<div class="rowitem list-group-item list-group-item-action bg-transparent d-flex align-items-center gap-2 border-0 border-bottom" id="btnImportSeed">
+<div class="icon-tile md" data-icon="down" data-icon-size="16"></div>
+<div class="grow"><div class="title">Import existing wallet</div><div class="sub" style="font-family:inherit">Use a 12/24 word recovery phrase</div></div>
+<span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span>
+</div>
+</div>
+<p class="muted center" style="margin-top:24px">Keys are encrypted and stored only on this device.</p>
+</div>
+<div class="screen hidden" data-view="maintenance">
+<div class="center" style="padding-top:34px">
+<div class="brand-badge" style="margin-bottom:18px"><span data-icon="lock" data-icon-size="30"></span></div>
+<h1 class="fw-semibold">Under maintenance</h1>
+<p class="muted" id="maintenanceMsg">FutureWallet is temporarily down for maintenance. Please check back soon.</p>
+</div>
+</div>
+<div class="screen hidden" data-view="password">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="welcome"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold" id="pwTitle">Create password</h2><span style="width:34px"></span></div>
+<p class="muted">This password unlocks the wallet on this device only.</p>
+<label>New password</label><input class="form-control" id="pw1" placeholder="Minimum 8 characters" type="password"/>
+<div class="pwbar"><i id="pwBar"></i></div>
+<div class="muted" id="pwLabel"></div>
+<label>Confirm password</label>
+<div style="position:relative">
+<input class="form-control" id="pw2" type="password" style="padding-right:38px"/>
+<span id="pw2Match" class="hidden" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--green,#2ecc71)" data-icon="check" data-icon-size="16"></span>
+</div>
+<div class="muted" id="pw2Hint" style="color:var(--red,#e5484d);font-size:12px;margin-top:4px;min-height:16px"></div>
+<div class="alert info py-2 alert-info" style="margin-top:16px">If you forget this password, only your recovery phrase can restore access. FutureWallet cannot reset it.</div>
+<button class="primary btn btn-primary rounded-pill fw-semibold" id="pwNext" style="width:100%;margin-top:18px" disabled>Continue</button>
+</div>
+<div class="screen hidden" data-view="seed">
+<div class="screen-head"><span style="width:34px"></span><h2 class="fw-semibold">Recovery phrase</h2><span style="width:34px"></span></div>
+<div class="alert warn py-2 alert-warning">Write these 12 words down and keep them offline. Whoever holds them holds the funds.</div>
+<div class="words d-flex flex-wrap gap-2" id="seedWords" style="margin:16px 0"></div>
+<label class="checkrow" for="seedAck"><input class="form-check-input" id="seedAck" type="checkbox"/><span>I have written down my recovery phrase and stored it safely.</span></label>
+<div class="btnrow" style="margin-top:8px">
+<button class="plain btn btn-outline-light rounded-pill" id="copySeed">Copy</button>
+<button class="primary btn btn-primary rounded-pill fw-semibold" id="seedNext" disabled>Continue</button>
+</div>
+</div>
+<div class="screen hidden" data-view="verify">
+<div class="screen-head"><span style="width:34px"></span><h2 class="fw-semibold">Confirm phrase</h2><span style="width:34px"></span></div>
+<p class="muted" id="verifyHint">Tap the missing words in the correct order.</p>
+<div class="words d-flex flex-wrap gap-2" id="verifySlots" style="margin:14px 0"></div>
+<div class="chipwrap d-flex flex-wrap gap-2" id="verifyChoices"></div>
+<div class="muted" id="verifyProgress" style="margin-top:12px;font-size:13px"></div>
+<div class="alert danger hidden" id="verifyError" style="margin-top:10px"></div>
+<div class="btnrow" style="margin-top:10px"><button class="plain btn btn-outline-light rounded-pill" id="verifyReset">Reset</button><button class="primary btn btn-primary rounded-pill fw-semibold" id="verifyDone" disabled>Confirm</button></div>
+</div>
+<div class="screen hidden" data-view="import">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="welcome"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">Import wallet</h2><span style="width:34px"></span></div>
+<label>Secret recovery phrase</label>
+<textarea class="form-control" id="importSeed" placeholder="word1 word2 word3 …"></textarea>
+<div class="muted" id="importSeedError" style="color:var(--red,#e5484d);font-size:12px;margin-top:6px;min-height:16px"></div>
+<button class="primary btn btn-primary rounded-pill fw-semibold" id="importNext" style="width:100%;margin-top:14px" disabled>Continue</button>
+<h3 class="fw-semibold">Or restore a vault file</h3>
+<input accept="application/json" class="form-control" id="vaultFile" style="padding:10px" type="file"/>
+<label>Vault password</label><input class="form-control" id="vaultPw" type="password"/>
+<button class="plain btn btn-outline-light rounded-pill" id="vaultRestore" style="width:100%;margin-top:12px">Restore vault</button>
+</div>
+<div class="screen hidden" data-view="lock">
+<div class="center" style="padding-top:64px">
+<div class="brand-badge"><span data-icon="lock" data-icon-size="32"></span></div>
+<h1 class="fw-semibold" style="margin-top:20px;font-size:26px">Welcome back</h1>
+<p class="muted" style="font-size:14px">Enter your password to unlock your wallet</p>
+</div>
+<div class="input-icon" style="margin-top:28px">
+<span class="ii" data-icon="lock" data-icon-size="16"></span>
+<input class="form-control" id="unlockPw" placeholder="Password" type="password"/>
+</div>
+<div class="muted" id="unlockPwError" style="color:var(--red,#e5484d);font-size:12px;margin-top:6px;min-height:16px"></div>
+<button class="primary btn btn-primary rounded-pill fw-semibold" id="btnUnlock" style="width:100%;margin-top:16px">Unlock</button>
+<button class="plain btn btn-outline-light rounded-pill fw-semibold hidden" id="btnBiometricUnlock" style="width:100%;margin-top:12px"><span data-icon="lock" data-icon-size="16"></span> Unlock with biometrics</button>
+<button class="link btn btn-link text-decoration-none" id="btnForgot" style="width:100%;margin-top:14px">Forgot password? Reset with recovery phrase</button>
+</div>
+<!-- ============ HOME ============ -->
+<div class="screen hidden" data-view="home">
+<div class="portfolio">
+<div class="portfolio-top">
+<div class="label">Total portfolio</div>
+<div class="bal-actions">
+<button class="bal-ico" id="searchBtn" title="Search"><span data-icon="search" data-icon-size="14"></span></button>
+<button class="bal-ico" id="btnAnnouncements" title="Announcements" style="position:relative"><span data-icon="megaphone" data-icon-size="14"></span><span class="unread-dot hidden" id="annDot"></span></button>
+<button class="bal-ico" id="btnNotifications" title="Notifications" style="position:relative"><span data-icon="bell" data-icon-size="14"></span><span class="unread-dot hidden" id="notifDot"></span></button>
+</div>
+</div>
+<div class="portfolio-balrow">
+<div class="amount" id="balAmount"><span id="balValue">0</span> <span id="balSymbol" style="font-size:16px;color:var(--muted)"></span></div>
+<div class="sk sk-amount hidden" id="balSkeleton"></div>
+<div class="bal-actions">
+<button class="bal-ico" id="btnHideBal" title="Hide balance"><span data-icon="eye" data-icon-size="14"></span></button>
+<button class="bal-ico" id="btnRefreshBal" title="Refresh"><span data-icon="reload" data-icon-size="14"></span></button>
+</div>
+</div>
+<div class="change hidden" id="balChange"></div>
+<div class="muted hidden" id="balError" style="font-size:11px;margin-top:2px">Couldn't load balance · <span id="balRetry" style="color:var(--accent-2);cursor:pointer">Retry</span></div>
+<div class="spark-wrap" id="homeChartWrap">
+<canvas class="hidden" id="spark"></canvas>
+<div class="spark-tip hidden" id="sparkTip"></div>
+</div>
+<div class="ranges" id="rangeRow">
+<span class="range" data-days="1">1D</span>
+<span class="range on" data-days="7">1W</span>
+<span class="range" data-days="30">1M</span>
+<span class="range" data-days="365">1Y</span>
+</div>
+</div>
+<div class="hidden" id="roBanner" style="margin-bottom:12px">
+<div class="alert info py-2 alert-info">Watch-only account — you can view it but not sign.</div>
+</div>
+<div class="hidden" id="backupBanner" style="margin-bottom:12px">
+<div class="alert warn py-2 alert-warning">Your recovery phrase is not backed up yet. <button class="link btn btn-link text-decoration-none" id="doBackup" style="padding:0">Back it up</button></div>
+</div>
+<div class="hidden" id="announceBanner" style="margin-bottom:12px">
+<div class="alert info py-2 alert-info ann-ticker-wrap" style="gap:8px">
+<div class="ann-ticker"><span class="ann-track" id="annTrack"></span></div>
+<button class="link btn btn-link text-decoration-none" id="annDismiss" style="padding:0;font-size:18px;line-height:1;flex-shrink:0">&times;</button>
+</div>
+</div>
+<h3 class="fw-semibold">Quick actions</h3>
+<div class="actions d-flex justify-content-around text-center">
+<div class="action action-primary" id="btnSend"><div class="icon-tile lg" data-icon="send"></div>Send</div>
+<div class="action" id="btnReceive"><div class="icon-tile lg" data-icon="receive"></div>Receive</div>
+<div class="action" id="btnSwap"><div class="icon-tile lg" data-icon="swap"></div>Swap</div>
+<div class="action" id="btnBrowser"><div class="icon-tile lg" data-icon="discover"></div>Discover</div>
+</div>
+<div class="section-head"><h3 class="fw-semibold" style="margin:0">Assets</h3><span class="mini" id="seeAllAssets">See all</span></div>
+<div id="homeAssets"></div>
+<div class="section-head" style="margin-top:16px"><h3 class="fw-semibold" style="margin:0">Recent activity</h3><span class="mini" id="seeAllActivity">See all</span></div>
+<div id="homeActivity"></div>
+</div>
+<!-- ============ ASSETS ============ -->
+<div class="screen hidden" data-view="assets">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="home"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">Assets</h2><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" id="btnAddToken" title="Import token">＋</button></div>
+<div class="hidden" id="allocCard" style="margin-bottom:14px">
+<div class="card" style="display:flex;align-items:center;gap:16px">
+<canvas id="allocDonut" width="120" height="120" style="width:88px;height:88px;flex-shrink:0"></canvas>
+<div id="allocLegend" class="grow" style="display:flex;flex-direction:column;gap:7px;min-width:0"></div>
+</div>
+</div>
+<div class="searchbox"><input class="form-control" id="assetSearch" placeholder="Search assets"/></div>
+<div class="listhead"><h3 class="fw-semibold" style="margin:0">Holdings</h3><span class="mini" id="toggleZero">Hide zero</span><span class="mini" id="toggleSort">Sort: value</span></div>
+<div id="paneTokens"><div id="tokenList"></div></div>
+</div>
+<!-- ============ HISTORY ============ -->
+<div class="screen hidden" data-view="history">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="home"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">History</h2><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" id="btnClearActivity" title="Clear list">⌫</button></div>
+<div class="segment nav nav-pills nav-fill gap-1" id="actFilter">
+<span class="seg on nav-link py-1 px-3" data-f="all">All</span>
+<span class="seg nav-link py-1 px-3" data-f="pending">Pending</span>
+<span class="seg nav-link py-1 px-3" data-f="send">Send</span>
+<span class="seg nav-link py-1 px-3" data-f="receive">Received</span>
+<span class="seg nav-link py-1 px-3" data-f="swap">Swap</span>
+</div>
+<div id="paneActivity"><div id="activityList"></div></div>
+</div>
+<!-- ============ NFTs ============ -->
+<div class="screen hidden" data-view="nfts">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="home"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">My NFTs</h2><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" id="btnAddNft" title="Import NFT">＋</button></div>
+<div id="paneNfts"><div class="nftgrid" id="nftGrid"></div></div>
+</div>
+<div class="screen hidden" data-view="nftDetail">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="nfts"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold" id="ndTitle">NFT</h2><span style="width:34px"></span></div>
+<img alt="" class="nfthero" id="ndImage"/>
+<h2 class="fw-semibold" id="ndName" style="margin-top:14px">—</h2>
+<div class="card alt border-0 shadow-sm">
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>Contract</span><b class="mono" id="ndContract" style="font-size:11px"></b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>Token ID</span><b id="ndTokenId"></b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>Standard</span><b id="ndStandard"></b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>Network</span><b id="ndNetwork"></b></div>
+</div>
+<div class="btnrow" style="margin-top:14px">
+<button class="primary btn btn-primary rounded-pill fw-semibold" id="ndTransfer">Transfer</button>
+<button class="danger btn btn-outline-danger rounded-pill" id="ndRemove">Remove</button>
+</div>
+<button class="link btn btn-link text-decoration-none" id="ndExplorer" style="width:100%;margin-top:8px">View on explorer</button>
+</div>
+<!-- ============ SEND ============ -->
+<div class="screen hidden" data-view="send">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="home"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">Send</h2><span style="width:34px"></span></div>
+<div class="sendhero">
+<div class="sendhero-top">
+<div class="asset-chip" id="sendAssetPick">
+<span class="swap-token-logo" id="sendAssetLogo"></span>
+<span class="sym" id="sendAssetTitle">—</span>
+<span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
+</div>
+<button class="plain btn btn-outline-light rounded-pill" id="btnMax" style="padding:8px 14px;font-size:12px">Max</button>
+</div>
+<input class="sendamount-input" id="sendAmount" inputmode="decimal" placeholder="0.0"/>
+<div class="sendhero-sub">
+<span class="hidden" id="sendFiatEq"></span>
+<span id="sendBal"></span>
+</div>
+</div>
+<label>To</label>
+<div style="display:flex;gap:10px">
+<input class="form-control" id="sendTo" placeholder="0x… or name.eth" style="flex:1"/>
+<button class="plain btn btn-outline-light rounded-pill hidden" id="sendScan" title="Scan QR code" style="padding:12px 16px"><span data-icon="qr" data-icon-size="16"></span></button>
+</div>
+<div class="muted" id="sendToHint"></div>
+<div class="chipwrap d-flex flex-wrap gap-2" id="contactPick" style="margin-top:10px"></div>
+<div id="sendRisks"></div>
+<div class="card alt border-0 shadow-sm" style="margin-top:16px">
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>Transaction fee</span><b id="feeText">—</b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>Speed</span><b><span id="gasLabel">Market</span> <button class="link btn btn-link text-decoration-none" id="editGas" style="padding:0">Edit</button></b></div>
+</div>
+<div id="sendGasWarn" class="alert danger hidden" style="margin-top:8px"></div>
+<details style="margin-top:14px">
+<summary class="muted" style="cursor:pointer;font-size:12px">Advanced: hex data</summary>
+<input class="form-control" id="sendData" placeholder="0x" style="margin-top:8px"/>
+</details>
+<button class="primary btn btn-primary rounded-pill fw-semibold" id="sendConfirm" style="width:100%;margin-top:16px;padding:12px 0">Review Transaction</button>
+</div>
+<!-- ============ CONFIRM SEND ============ -->
+<div class="screen hidden" data-view="confirmSend">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="send"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">Confirm Send</h2><span style="width:34px"></span></div>
+<div class="card alt border-0 shadow-sm text-center py-4 my-2">
+<div class="muted">Amount to Send</div>
+<div class="fw-bold fs-3 text-warning" id="csSendAmount">0 ETH</div>
+<div class="muted mt-1" id="csSendFiat" style="font-size:13px"></div>
+</div>
+<div class="card alt border-0 shadow-sm mt-3">
+<div class="kv d-flex justify-content-between align-items-center py-2"><span>To Recipient</span><b class="mono" id="csSendTo" style="font-size:12px">0x…</b></div>
+<div class="kv d-flex justify-content-between align-items-center py-2"><span>Network</span><b id="csSendNetwork">ETH</b></div>
+<div class="kv d-flex justify-content-between align-items-center py-2"><span>Estimated Fee</span><b id="csSendFee">—</b></div>
+</div>
+<div id="csSendGasWarn" class="alert danger hidden" style="margin-top:12px"></div>
+<button class="primary btn btn-primary rounded-pill fw-semibold w-100 mt-4 py-3" id="csSendGoBtn">Confirm &amp; Send</button>
+</div>
+<!-- ============ SEND SUCCESS ============ -->
+<div class="screen hidden" data-view="sendSuccess">
+<div class="center" style="padding-top:32px">
+<div class="brand-badge" style="background:var(--green-bg);color:var(--green);width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px"><span data-icon="check" data-icon-size="32"></span></div>
+<h2 class="fw-semibold">Transaction Submitted!</h2>
+<p class="muted" style="font-size:13px">Your transfer has been sent to the network.</p>
+</div>
+<div class="card alt border-0 shadow-sm text-center py-3 my-3">
+<div class="fw-bold fs-4 text-success" id="ssAmount">0 ETH</div>
+<div class="muted mt-1" id="ssTo" style="font-size:12px">To: 0x…</div>
+</div>
+<div class="card alt border-0 shadow-sm p-3 mb-3">
+<div class="muted mb-1" style="font-size:11px">Transaction Hash</div>
+<div class="mono text-break" id="ssHash" style="font-size:11px;color:var(--accent-2);word-break:break-all">0x…</div>
+</div>
+<div class="d-flex flex-column gap-2 mt-4">
+<button class="primary btn btn-primary rounded-pill fw-semibold py-2" id="ssDoneBtn">Done</button>
+<button class="plain btn btn-outline-light rounded-pill py-2" id="ssExplorerBtn">View on Explorer</button>
+</div>
+</div>
+<!-- ============ RECEIVE ============ -->
+<div class="screen hidden" data-view="receive">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="home"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">Receive</h2><span style="width:34px"></span></div>
+<div class="card receive-card">
+<div class="receive-asset-row">
+<span class="muted">Receive</span>
+<div class="asset-chip" id="rcvAssetPick">
+<span class="swap-token-logo" id="rcvAssetLogo"></span>
+<span class="sym" id="rcvAssetTitle">—</span>
+<span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
+</div>
+</div>
+<div class="center" style="margin-top:14px">
+<div class="qrwrap"><canvas height="196" id="qr" width="196"></canvas></div>
+<div class="muted" id="receiveEns" style="margin-top:8px"></div>
+</div>
+</div>
+<div class="addrbox">
+<span class="a" id="receiveAddr"></span>
+<button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" id="copyAddr" title="Copy"><span data-icon="copy" data-icon-size="16"></span></button>
+</div>
+<div class="iconrow">
+<div class="ia" id="rcvCopy"><span class="ico" data-icon="copy" data-icon-size="16"></span>Copy</div>
+<div class="ia" id="rcvShare"><span class="ico" data-icon="share" data-icon-size="16"></span>Share</div>
+<div class="ia" id="rcvExplorer"><span class="ico" data-icon="explorer" data-icon-size="16"></span>Explorer</div>
+</div>
+<div class="alert warn py-2 alert-warning" id="rcvWarn" style="margin-top:16px"></div>
+</div>
+<!-- ============ SWAP ============ -->
+<div class="screen hidden" data-view="swap">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="home"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">Swap</h2><span style="width:34px"></span></div>
+<div class="alert info hidden py-2 alert-info" id="swapNotice"></div>
+<div class="swapcard" style="margin-top:12px">
+<div class="top"><span>From</span><span id="swapFromBal"></span></div>
+<div class="mid">
+<div class="asset-chip" id="swapFromPick">
+<span class="swap-token-logo" id="swapFromLogo"></span>
+<span class="sym" id="swapFromSym">—</span>
+<span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
+</div>
+<input class="form-control" id="swapAmount" inputmode="decimal" placeholder="0.0"/>
+</div>
+<div style="text-align:right;margin-top:6px"><button class="link btn btn-link text-decoration-none" id="swapMax" style="padding:0;font-size:11px">Max</button></div>
+<div id="swapAmountWarn" class="alert danger hidden" style="margin-top:8px"></div>
+</div>
+<div class="swapswitch"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" id="swapFlip" title="Flip"><span data-icon="flip" data-icon-size="16"></span></button></div>
+<div class="swapcard">
+<div class="top"><span>To (estimate)</span><span id="swapToBal"></span></div>
+<div class="mid">
+<div class="asset-chip" id="swapToPick">
+<span class="swap-token-logo" id="swapToLogo"></span>
+<span class="sym" id="swapToSym">—</span>
+<span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
+</div>
+<input class="form-control" id="swapOutPreview" placeholder="0.0" readonly=""/>
+</div>
+</div>
+<button class="plain btn btn-outline-light rounded-pill hidden" id="swapQuoteBtn" style="width:100%;margin-top:14px">Get quote</button>
+<div class="card alt hidden border-0 shadow-sm" id="swapQuoteCard" style="margin-top:12px">
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>You receive</span><b id="qOut">—</b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>Rate</span><b id="qRate">—</b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>Min received (<span id="qSlip">0.5</span>%)</span><b id="qMin">—</b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>Route</span><b id="qVenue">—</b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1 hidden" id="qApprovalFeeRow"><span>Approval network fee</span><b id="qApprovalFee">—</b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1"><span id="qFeeLabel">Network fee</span><b id="qFee">—</b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1 hidden" id="qTotalFeeRow"><span>Total estimated fee</span><b id="qTotalFee">—</b></div>
+</div>
+<div class="btnrow hidden" id="swapActions" style="margin-top:14px">
+<button class="plain btn btn-outline-light rounded-pill" id="swapApproveBtn">Approve</button>
+<button class="primary btn btn-primary rounded-pill fw-semibold" id="swapGoBtn">Swap</button>
+</div>
+<div class="card alt border-0 shadow-sm" style="margin-top:14px;padding:12px 14px">
+<div class="d-flex align-items-center gap-2 mb-2" style="color:var(--accent)">
+<span data-icon="wallet" data-icon-size="16"></span>
+<b style="font-size:13px;letter-spacing:0.2px">Swap Flow &amp; Rules</b>
+</div>
+<div style="font-size:11.5px;color:var(--muted);line-height:1.55">
+<div style="margin-bottom:6px">
+• <strong style="color:var(--text)">One-Time Approval:</strong> First-time token swaps require a one-time <strong>Approve</strong> transaction. Gas fee is charged <strong>only once</strong> per token contract. Once approved, future swaps for this token do not require approval again.
+</div>
+<div style="margin-bottom:6px">
+• <strong style="color:var(--text)">Native Tokens:</strong> Native tokens (e.g., BNB, ETH) do not require approval and are swapped directly.
+</div>
+<div>
+• <strong style="color:var(--text)">Network Gas Fee:</strong> Ensure you have sufficient native network token (BNB/ETH) balance to cover transaction gas fees.
+</div>
+</div>
+</div>
+</div>
+<!-- ============ CONFIRM SWAP ============ -->
+<div class="screen hidden" data-view="confirmSwap">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="swap"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">Confirm Swap</h2><span style="width:34px"></span></div>
+<div class="card alt border-0 shadow-sm text-center py-4 my-2">
+<div class="muted">From</div>
+<div class="fw-bold fs-3 text-warning" id="csFromAmount">1 BNB</div>
+<div class="my-2 fs-4 d-flex justify-content-center"><span data-icon="down" data-icon-size="22"></span></div>
+<div class="muted">To (Estimate)</div>
+<div class="fw-bold fs-3 text-success" id="csToAmount">587.65 USDT</div>
+</div>
+<div class="card alt border-0 shadow-sm mt-3">
+<div class="kv d-flex justify-content-between align-items-center py-2"><span>Rate</span><b id="csRate">1 BNB = 587.65 USDT</b></div>
+<div class="kv d-flex justify-content-between align-items-center py-2"><span>Slippage Tolerance</span><b id="csSlippage">0.5%</b></div>
+<div class="kv d-flex justify-content-between align-items-center py-2"><span>Network Fee</span><b id="csFee">0.00021 BNB (~$0.10)</b></div>
+<div class="kv d-flex justify-content-between align-items-center py-2"><span>You Will Receive</span><b class="text-success" id="csReceive">587.65 USDT</b></div>
+</div>
+<details style="margin-top:10px">
+<summary class="muted" style="cursor:pointer;font-size:12px">View gas details</summary>
+<div class="card alt border-0 shadow-sm mt-2">
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>Gas Limit</span><b id="csGasLimit">—</b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>Gas Price</span><b id="csGasPrice">—</b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1 hidden" id="csMaxFeeRow"><span>Max Fee</span><b id="csMaxFee">—</b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1 hidden" id="csPriorityFeeRow"><span>Priority Fee</span><b id="csPriorityFee">—</b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>Estimated Network Fee</span><b id="csFeeDetail">—</b></div>
+</div>
+</details>
+<div class="muted" style="margin-top:14px;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Gas speed</div>
+<div class="ranges" id="csGasRow" style="margin-top:6px">
+<span class="range" data-preset="low">Low</span>
+<span class="range on" data-preset="market">Market</span>
+<span class="range" data-preset="aggressive">Fast</span>
+</div>
+<button class="primary btn btn-primary rounded-pill fw-semibold w-100 mt-4 py-3" id="csConfirmBtn">Review Swap</button>
+</div>
+<!-- ============ TOKEN DETAIL ============ -->
+<div class="screen hidden" data-view="tokenDetail">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="assets"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold" id="tdTitle">Asset</h2><span style="width:34px"></span></div>
+
+<div class="td-hero">
+<div class="td-hero-top">
+<div class="td-logo-wrap"><img alt="" class="ident td-logo" height="52" id="tdIcon" width="52"/></div>
+<div class="td-hero-names">
+<div class="td-symbol" id="tdSym"></div>
+<div class="muted td-fullname" id="tdFullName"></div>
+</div>
+<span class="badge td-net-badge" id="tdNetBadge"></span>
+</div>
+<div class="td-balance" id="tdBal">0</div>
+<div class="muted" id="tdFiat"></div>
+<div class="td-price-row">
+<span class="muted td-price" id="tdPrice"></span>
+<span class="change hidden" id="tdChange"></span>
+</div>
+</div>
+
+<div class="card td-chart-card" id="tdChartCard">
+<div class="td-chart-wrap">
+<canvas class="hidden" id="tdSpark"></canvas>
+<div class="td-chart-tip hidden" id="tdChartTip"></div>
+<div class="empty hidden" id="tdChartEmpty" style="padding:26px 0">No chart data for this token</div>
+</div>
+<div class="ranges hidden" id="tdRangeRow">
+<span class="range" data-days="1">1D</span>
+<span class="range on" data-days="7">1W</span>
+<span class="range" data-days="30">1M</span>
+<span class="range" data-days="365">1Y</span>
+</div>
+</div>
+
+<div class="td-actions">
+<button type="button" class="td-action td-action-primary" id="tdSend"><span data-icon="send" data-icon-size="18"></span><span>Send</span></button>
+<button type="button" class="td-action" id="tdReceive"><span data-icon="receive" data-icon-size="18"></span><span>Receive</span></button>
+<button type="button" class="td-action" id="tdSwap"><span data-icon="swap" data-icon-size="18"></span><span>Swap</span></button>
+</div>
+
+<div class="card td-addr-card hidden" id="tdAddrCard">
+<div class="td-addr-head">
+<span class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px">Contract address</span>
+<button type="button" class="td-copy-btn" id="tdCopyAddr"><span data-icon="copy" data-icon-size="12" id="tdCopyIcon"></span><span id="tdCopyLabel">Copy</span></button>
+</div>
+<div class="mono td-addr-text" id="tdAddr"></div>
+</div>
+
+<div class="td-verify hidden" id="tdVerify"></div>
+
+<button type="button" class="td-explorer-link hidden" id="tdExplorer" style="margin-top:10px"><span>View on Explorer</span><span data-icon="explorer" data-icon-size="13"></span></button>
+
+<div class="card alt border-0 shadow-sm td-info-card">
+<h3 class="fw-semibold" style="margin:0 0 4px">Token information</h3>
+<div class="kv d-flex justify-content-between align-items-center py-1 hidden" id="tdNameRow"><span>Name</span><b id="tdName"></b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>Symbol</span><b id="tdSymRow"></b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>Network</span><b id="tdNet"></b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1 hidden" id="tdStandardRow"><span>Standard</span><b id="tdStandard"></b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1"><span>Decimals</span><b id="tdDec"></b></div>
+</div>
+
+<button type="button" class="danger btn btn-outline-danger rounded-pill hidden" id="tdRemove" style="width:100%;margin-top:14px">Hide token</button>
+</div>
+<!-- ============ TX DETAIL ============ -->
+<div class="screen hidden" data-view="txDetail">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="history"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">Transaction</h2><span style="width:34px"></span></div>
+<div id="txBody"></div>
+<div class="btnrow" id="txActions" style="margin-top:14px"></div>
+</div>
+<!-- ============ IMPORT TOKEN / NFT ============ -->
+<div class="screen hidden" data-view="addToken">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="assets"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">Import token</h2><span style="width:34px"></span></div>
+<label>Token contract address</label><input class="form-control" id="tokAddr" placeholder="0x…"/>
+<label>Symbol (auto-detected)</label><input class="form-control" id="tokSym"/>
+<label>Decimals (auto-detected)</label><input class="form-control" id="tokDec" inputmode="numeric"/>
+<button class="primary btn btn-primary rounded-pill fw-semibold" id="tokSave" style="width:100%;margin-top:16px">Import</button>
+</div>
+<div class="screen hidden" data-view="addNft">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="nfts"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">Import NFT</h2><span style="width:34px"></span></div>
+<label>Contract address</label><input class="form-control" id="nftAddr" placeholder="0x…"/>
+<label>Token ID</label><input class="form-control" id="nftId" inputmode="numeric"/>
+<label>Standard</label><select class="form-control" id="nftStd"><option value="erc721">ERC-721</option><option value="erc1155">ERC-1155</option></select>
+<button class="primary btn btn-primary rounded-pill fw-semibold" id="nftSave" style="width:100%;margin-top:16px">Import</button>
+</div>
+<!-- ============ SETTINGS ============ -->
+<div class="screen hidden" data-view="settings">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="home"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">Settings</h2><span style="width:34px"></span></div>
+<h3 class="fw-semibold" style="margin-top:0">Security</h3>
+<div class="setgroup">
+<div class="rowitem list-group-item list-group-item-action bg-transparent d-flex align-items-center gap-2 border-0 border-bottom" data-goto="security"><div class="icon-tile sm" data-icon="lock" data-icon-size="15"></div><div class="grow"><div class="title">Security &amp; privacy</div><div class="sub" style="font-family:inherit">Recovery phrase, password, vault backup</div></div><span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></div>
+<div class="rowitem list-group-item list-group-item-action bg-transparent d-flex align-items-center gap-2 border-0 border-bottom" data-goto="approvals"><div class="icon-tile sm" data-icon="check" data-icon-size="15"></div><div class="grow"><div class="title">Token approvals</div><div class="sub" style="font-family:inherit">Review and revoke spend permissions</div></div><span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></div>
+<div class="switch"><span>Phishing protection</span><input class="form-check-input" id="setPhish" type="checkbox"/></div>
+<div class="numrow"><span>Auto-lock<div class="muted" style="font-size:11px">Minutes of inactivity, 0 = never</div></span><input class="form-control" id="setAutoLock" inputmode="numeric"/></div>
+<div class="switch hidden" id="setBiometricRow"><span>Unlock with biometrics</span><input class="form-check-input" id="setBiometric" type="checkbox"/></div>
+<div class="rowitem list-group-item list-group-item-action bg-transparent d-flex align-items-center gap-2 border-0" id="mLock"><div class="icon-tile sm" data-icon="lock" data-icon-size="15"></div><div class="grow"><div class="title">Lock wallet</div></div><span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></div>
+</div>
+<h3 class="fw-semibold">Wallet</h3>
+<div class="setgroup">
+<div class="rowitem list-group-item list-group-item-action bg-transparent d-flex align-items-center gap-2 border-0 border-bottom" data-goto="walletconnect"><div class="icon-tile sm" data-icon="wallet" data-icon-size="15"></div><div class="grow"><div class="title">WalletConnect</div><div class="sub" style="font-family:inherit">Pair with dApps and manage sessions</div></div><span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></div>
+<div class="rowitem list-group-item list-group-item-action bg-transparent d-flex align-items-center gap-2 border-0 border-bottom" data-goto="permissions"><div class="icon-tile sm" data-icon="discover" data-icon-size="15"></div><div class="grow"><div class="title">Connected sites</div><div class="sub" style="font-family:inherit">Manage per-site permissions</div></div><span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></div>
+<div class="rowitem list-group-item list-group-item-action bg-transparent d-flex align-items-center gap-2 border-0 border-bottom" data-goto="networks"><div class="icon-tile sm" data-icon="network" data-icon-size="15"></div><div class="grow"><div class="title">Networks</div><div class="sub" style="font-family:inherit">Add or remove RPCs</div></div><span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></div>
+<div class="rowitem list-group-item list-group-item-action bg-transparent d-flex align-items-center gap-2 border-0 border-bottom" data-goto="contacts"><div class="icon-tile sm" data-icon="profile" data-icon-size="15"></div><div class="grow"><div class="title">Contacts</div><div class="sub" style="font-family:inherit">Address book</div></div><span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></div>
+<div class="rowitem list-group-item list-group-item-action bg-transparent d-flex align-items-center gap-2 border-0 border-bottom" id="mExplorer"><div class="icon-tile sm" data-icon="explorer" data-icon-size="15"></div><div class="grow"><div class="title">View on block explorer</div></div><span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></div>
+<div class="rowitem list-group-item list-group-item-action bg-transparent d-flex align-items-center gap-2 border-0" id="mExpand"><div class="icon-tile sm" data-icon="expand" data-icon-size="15"></div><div class="grow"><div class="title">Expand view</div><div class="sub" style="font-family:inherit">Open the wallet in its own full tab</div></div><span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></div>
+</div>
+<h3 class="fw-semibold">Preferences</h3>
+<div class="setgroup" style="padding:0 14px">
+<label>Theme</label>
+<select class="form-control" id="setTheme">
+<option value="dark">Dark</option>
+<option value="light">Light</option>
+</select>
+<label>Currency</label>
+<select class="form-control" id="setCurrency">
+<option value="usd">USD - US Dollar</option>
+<option value="eur">EUR - Euro</option>
+<option value="gbp">GBP - British Pound</option>
+<option value="inr">INR - Indian Rupee</option>
+<option value="jpy">JPY - Japanese Yen</option>
+<option value="aud">AUD - Australian Dollar</option>
+<option value="cad">CAD - Canadian Dollar</option>
+<option value="cny">CNY - Chinese Yuan</option>
+<option value="sgd">SGD - Singapore Dollar</option>
+<option value="aed">AED - UAE Dirham</option>
+<option value="chf">CHF - Swiss Franc</option>
+<option value="krw">KRW - South Korean Won</option>
+<option value="brl">BRL - Brazilian Real</option>
+<option value="rub">RUB - Russian Ruble</option>
+</select>
+<label>dApp browser homepage</label><input class="form-control" id="setHomepage"/>
+<div class="switch" style="padding:14px 0"><span>Show fiat value</span><input class="form-check-input" id="setFiat" type="checkbox"/></div>
+<div class="switch" style="padding:14px 0"><span>Show price chart</span><input class="form-check-input" id="setChart" type="checkbox"/></div>
+<div class="switch" style="padding:14px 0"><span>Token &amp; chain logos</span><input class="form-check-input" id="setLogos" type="checkbox"/></div>
+<div class="switch" style="padding:14px 0"><span>Show test networks</span><input class="form-check-input" id="setTestnets" type="checkbox"/></div>
+<div class="switch" style="padding:14px 0"><span>Transaction notifications</span><input class="form-check-input" id="setNotif" type="checkbox"/></div>
+<div class="switch" style="padding:14px 0"><span>Custom nonce field</span><input class="form-check-input" id="setNonce" type="checkbox"/></div>
+</div>
+<h3 class="fw-semibold">WalletConnect</h3>
+<div class="setgroup" style="padding:0 14px 14px">
+<label>Project ID</label><input class="form-control" id="setWcProjectId" placeholder="from cloud.reown.com"/>
+<div class="muted">Required for pairing. Get a free one at cloud.reown.com — do not ship a shared demo ID.</div>
+</div>
+<h3 class="fw-semibold">Swap</h3>
+<div class="setgroup" style="padding:0 14px 14px">
+<label>Provider</label>
+<select class="form-control" id="setSwapProvider">
+<option value="router">DEX router (no API key)</option>
+<option value="0x">0x aggregator (API key)</option>
+<option value="1inch">1inch aggregator (API key)</option>
+</select>
+<label>Aggregator API key</label><input class="form-control" id="setSwapKey" placeholder="only for 0x / 1inch"/>
+<label>Slippage (%)</label><input class="form-control" id="setSlippage" inputmode="decimal"/>
+<label>Deadline (minutes)</label><input class="form-control" id="setDeadline" inputmode="numeric"/>
+</div>
+<button class="primary btn btn-primary rounded-pill fw-semibold" id="saveSettings" style="width:100%">Save settings</button>
+</div>
+<!-- ============ SECURITY ============ -->
+<div class="screen hidden" data-view="security">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="settings"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">Security &amp; privacy</h2><span style="width:34px"></span></div>
+<label>Password</label><input class="form-control" id="revealPw" type="password"/>
+<div class="muted" id="revealPwError" style="color:var(--red,#e5484d);font-size:12px;margin-top:6px;min-height:16px"></div>
+<div class="btnrow" style="margin-top:12px"><button class="plain btn btn-outline-light rounded-pill" id="btnRevealSeed" disabled>Reveal phrase</button><button class="plain btn btn-outline-light rounded-pill" id="btnRevealPk" disabled>Reveal key</button></div>
+<div class="code hidden" id="revealBox" style="margin-top:12px"></div>
+<h3 class="fw-semibold">Change password</h3>
+<label>Current</label><input class="form-control" id="oldPw" type="password"/>
+<label>New</label><input class="form-control" id="newPw" type="password"/>
+<div id="changePwMsg" style="font-size:12px;margin-top:6px;min-height:16px"></div>
+<button class="plain btn btn-outline-light rounded-pill" id="btnChangePw" style="width:100%;margin-top:12px">Update password</button>
+<h3 class="fw-semibold">Vault backup</h3>
+<p class="muted">Export an encrypted vault file. Restoring it needs the same password.</p>
+<button class="plain btn btn-outline-light rounded-pill" id="btnExportVault" style="width:100%">Export vault file</button>
+<h3 class="fw-semibold">Danger zone</h3>
+<button class="danger btn btn-outline-danger rounded-pill" id="btnReset" style="width:100%">Reset wallet</button>
+</div>
+<!-- ============ NETWORKS ============ -->
+<div class="screen hidden" data-view="networks">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="settings"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">Networks</h2><span style="width:34px"></span></div>
+<div class="searchbox"><input class="form-control" id="netManageSearch" placeholder="Search networks"/></div>
+<div id="networkManageList" style="max-height:260px;overflow:auto"></div>
+<h3 class="fw-semibold">Add network</h3>
+<label>Name</label><input class="form-control" id="netNameIn" placeholder="Future Chain"/>
+<label>RPC URL</label><input class="form-control" id="netRpc" placeholder="https://rpc.yourchain.io"/>
+<label>Chain ID</label><input class="form-control" id="netChainId" inputmode="numeric" placeholder="7777"/>
+<label>Symbol</label><input class="form-control" id="netSymbol" placeholder="FUT"/>
+<label>Block explorer (optional)</label><input class="form-control" id="netExplorer"/>
+<button class="primary btn btn-primary rounded-pill fw-semibold" id="netSave" style="width:100%;margin-top:14px">Add network</button>
+</div>
+<!-- ============ CONTACTS ============ -->
+<div class="screen hidden" data-view="contacts">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="settings"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">Contacts</h2><span style="width:34px"></span></div>
+<div id="contactList"></div>
+<h3 class="fw-semibold">Add contact</h3>
+<label>Name</label><input class="form-control" id="cName"/>
+<label>Address / ENS</label><input class="form-control" id="cAddr" placeholder="0x… or name.eth"/>
+<button class="primary btn btn-primary rounded-pill fw-semibold" id="cSave" style="width:100%;margin-top:14px">Save contact</button>
+</div>
+<!-- ============ CONNECTED SITES ============ -->
+<div class="screen hidden" data-view="permissions">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="settings"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">Connected sites</h2><span style="width:34px"></span></div>
+<div id="siteList"></div>
+</div>
+<!-- ============ APPROVALS ============ -->
+<div class="screen hidden" data-view="approvals">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="settings"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">Token approvals</h2><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" id="apvRescan" title="Rescan">⟳</button></div>
+<p class="muted">Contracts allowed to spend your tokens. Stale unlimited approvals are the biggest route for drain attacks.</p>
+<label>Lookback</label>
+<select class="form-control" id="apvRange">
+<option value="100000">~2 weeks</option>
+<option selected="" value="500000">~2 months</option>
+<option value="2000000">~8 months</option>
+</select>
+<div class="muted" id="apvStatus" style="margin-top:12px"></div>
+<div id="apvList" style="margin-top:10px"></div>
+</div>
+<!-- ============ WALLETCONNECT ============ -->
+<div class="screen hidden" data-view="walletconnect">
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="settings"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">WalletConnect</h2><span style="width:34px"></span></div>
+<div class="alert info py-2 alert-info" id="wcStatusBox">Paste the pairing URI shown by the dApp, or scan its QR code.</div>
+<button class="plain btn btn-outline-light rounded-pill hidden" id="wcScan" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px"><span data-icon="qr" data-icon-size="16"></span>Scan QR code</button>
+<label style="margin-top:14px">Pairing URI</label>
+<input class="form-control" id="wcUri" placeholder="wc:…"/>
+<div class="btnrow" style="margin-top:12px"><button class="plain btn btn-outline-light rounded-pill" id="wcPaste">Paste</button><button class="primary btn btn-primary rounded-pill fw-semibold" id="wcConnect">Connect</button></div>
+<h3 class="fw-semibold">Active sessions</h3>
+<div id="wcList"></div>
+</div>
+<!-- ============ BOTTOM NAV ============ -->
+<div class="bottomnav hidden d-flex justify-content-around border-top py-2" id="bottomNav">
+<div class="navitem on d-flex flex-column align-items-center small" data-nav="home" id="navHome"><span class="ico" data-icon="home" data-icon-size="18"></span>Home</div>
+<div class="navitem d-flex flex-column align-items-center small" data-nav="assets" id="navAssets"><span class="ico" data-icon="assets" data-icon-size="18"></span>Assets</div>
+<div class="navitem d-flex flex-column align-items-center small" data-nav="swap" id="navSwap"><span class="ico" data-icon="swap" data-icon-size="18"></span>Swap</div>
+<div class="navitem d-flex flex-column align-items-center small" data-nav="history" id="navHistory"><span class="ico" data-icon="history" data-icon-size="18"></span>History</div>
+<div class="navitem d-flex flex-column align-items-center small" data-nav="settings" id="navSettings"><span class="ico" data-icon="settings" data-icon-size="18"></span>Settings</div>
+</div>
+<!-- ============ SHEETS ============ -->
+<div class="sheet hidden" id="sheetAccounts"><div class="inner card border-0 shadow-lg p-3"><div class="handle"></div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+<h2 class="fw-semibold" style="margin:0">Accounts</h2>
+<button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" id="btnAccountMenu" title="Add account"><span data-icon="more" data-icon-size="16"></span></button>
+</div>
+<div id="accountList"></div>
+<button class="link btn btn-link text-decoration-none" data-close-sheet="1" style="width:100%;margin-top:10px">Close</button></div></div>
+<div class="sheet hidden" id="sheetNetworks"><div class="inner card border-0 shadow-lg p-3"><div class="handle"></div>
+<h2 class="fw-semibold">Select network</h2>
+<div class="searchbox"><input class="form-control" id="netSearch" placeholder="Search networks"/></div>
+<div id="networkPickList" style="max-height:320px;overflow:auto"></div>
+<button class="link btn btn-link text-decoration-none" data-goto="networks" style="width:100%;margin-top:8px">Add network</button>
+<button class="link btn btn-link text-decoration-none" data-close-sheet="1" style="width:100%">Close</button></div></div>
+<div class="sheet hidden" id="sheetSearch"><div class="inner card border-0 shadow-lg p-3"><div class="handle"></div>
+<h2 class="fw-semibold">Search</h2>
+<div class="searchbox"><input class="form-control" id="globalSearchInput" placeholder="Search tokens or contacts"/></div>
+<div id="globalSearchResults" style="max-height:400px;overflow:auto"></div>
+<button class="link btn btn-link text-decoration-none" data-close-sheet="1" style="width:100%;margin-top:8px">Close</button></div></div>
+<div class="sheet hidden" id="sheetNotifications"><div class="inner card border-0 shadow-lg p-3"><div class="handle"></div>
+<div class="d-flex justify-content-between align-items-center">
+<h2 class="fw-semibold" style="margin:0">Notifications</h2>
+<button class="link btn btn-link text-decoration-none" id="clearAllNotifs" style="padding:0;font-size:13px">Clear all</button>
+</div>
+<div id="notifList" style="max-height:420px;overflow:auto"></div>
+<button class="link btn btn-link text-decoration-none" data-close-sheet="1" style="width:100%;margin-top:8px">Close</button></div></div>
+<div class="sheet hidden" id="sheetAnnouncements"><div class="inner card border-0 shadow-lg p-3"><div class="handle"></div>
+<div class="d-flex justify-content-between align-items-center">
+<h2 class="fw-semibold" style="margin:0">Announcements</h2>
+<button class="link btn btn-link text-decoration-none" id="clearAllAnns" style="padding:0;font-size:13px">Clear all</button>
+</div>
+<div id="annListSheet" style="max-height:420px;overflow:auto"></div>
+<button class="link btn btn-link text-decoration-none" data-close-sheet="1" style="width:100%;margin-top:8px">Close</button></div></div>
+<div class="sheet hidden" id="sheetSitePerms"><div class="inner card border-0 shadow-lg p-3"><div class="handle"></div>
+<h2 class="fw-semibold">Shared accounts</h2>
+<div class="muted" id="sitePickTitle" style="word-break:break-all;margin-bottom:10px"></div>
+<div id="sitePickList" style="max-height:280px;overflow:auto"></div>
+<button class="primary btn btn-primary rounded-pill fw-semibold" id="sitePickSave" style="width:100%;margin-top:12px">Save</button>
+<button class="link btn btn-link text-decoration-none" data-close-sheet="1" style="width:100%">Cancel</button></div></div>
+<div class="sheet hidden" id="sheetAssets"><div class="inner card border-0 shadow-lg p-3"><div class="handle"></div>
+<h2 class="fw-semibold">Select asset</h2>
+<div id="assetPickList" style="max-height:340px;overflow:auto"></div>
+<button class="link btn btn-link text-decoration-none" data-close-sheet="1" style="width:100%;margin-top:8px">Close</button></div></div>
+<div class="sheet hidden" id="sheetGas"><div class="inner card border-0 shadow-lg p-3"><div class="handle"></div>
+<h2 class="fw-semibold">Edit gas</h2><div id="gasOpts"></div>
+<details style="margin-top:8px"><summary class="muted" style="cursor:pointer">Advanced</summary>
+<label>Gas limit</label><input class="form-control" id="gasLimitIn" inputmode="numeric"/>
+<label>Max fee (gwei)</label><input class="form-control" id="maxFeeIn" inputmode="decimal"/>
+<label>Priority fee (gwei)</label><input class="form-control" id="tipIn" inputmode="decimal"/>
+<label class="hidden" id="nonceLabel">Nonce</label><input class="hidden form-control" id="nonceIn" inputmode="numeric"/>
+</details>
+<button class="primary btn btn-primary rounded-pill fw-semibold" id="gasSave" style="width:100%;margin-top:12px">Save</button>
+<button class="link btn btn-link text-decoration-none" data-close-sheet="1" style="width:100%">Cancel</button></div></div>
+<script src="popup.js" type="module"></script>
+</body>
+</html>

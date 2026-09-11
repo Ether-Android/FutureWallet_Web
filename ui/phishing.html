@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="binance">
+<head><meta charset="utf-8" /><script src="../tg/frame-bridge.js"></script><meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/><link href="vendor/bootstrap.min.css" rel="stylesheet"/><link rel="stylesheet" href="app.css" /><link href="../tg/tg-ui.css" rel="stylesheet"/><title>Phishing warning</title>
+<style>body{width:100%;height:auto;min-height:100vh}</style></head>
+<body class="page mobile">
+<div class="screen" style="max-width:520px;margin:0 auto;padding-top:60px">
+  <div class="center">
+    <div style="font-size:48px">⚠️</div>
+    <h1>This site has been blocked</h1>
+    <p class="muted">It is on the FutureWallet blocklist - sites like this typically steal recovery phrases or approvals.</p>
+    <div class="code" id="host" style="margin:14px 0"></div>
+  </div>
+  <div class="alert danger">Never enter your recovery phrase on a website. No legitimate site asks for your 12 words.</div>
+  <div class="btnrow" style="margin-top:18px">
+    <button class="primary" id="back">Go back</button>
+    <button class="plain danger" id="proceed">Proceed at my own risk</button>
+  </div>
+</div>
+<script type="module" src="phishing.js"></script>
+</body>
+</html>

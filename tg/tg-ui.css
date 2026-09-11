@@ -1,0 +1,41 @@
+/* FutureWallet - Telegram Mini App overrides for the shared extension UI.
+   Everything is scoped under html.tg (set by tg/frame-bridge.js), so the same ui/ files keep
+   working unchanged in the Chrome extension. */
+
+html.tg, html.tg body { overscroll-behavior: none; }
+html.tg body { -webkit-tap-highlight-color: transparent; }
+/* Inputs < 16px make iOS zoom the page on focus. */
+html.tg input, html.tg select, html.tg textarea { font-size: 16px; }
+
+/* The iframe already sits inside Telegram's safe area (host.js pads the stage). */
+html.tg .bottomnav { margin-bottom: 10px; }
+
+/* Popup: no "expand to tab" in Telegram. */
+html.tg #mExpand { display: none !important; }
+html.tg #mExplorer { border-bottom: 0 !important; }
+
+/* Approval overlay: fill the overlay, scroll the body, keep Confirm/Reject pinned. */
+html.tg body.approve-page { height: 100% !important; min-height: 0 !important; }
+html.tg body.approve-page .screen { overflow-y: auto; }
+
+/* Phishing overlay: full-height scrolling page instead of the extension's centred card. */
+html.tg body.page { height: 100%; min-height: 0; max-width: none; box-shadow: none; overflow-y: auto; }
+
+/* dApp launcher: dApps open in Telegram's browser and connect over WalletConnect, so the in-page
+   iframe browser controls have nothing to drive. */
+html.tg #frame,
+html.tg #overlay,
+html.tg #back,
+html.tg #fwd,
+html.tg #reload,
+html.tg #btnInjectedConnect { display: none !important; }
+html.tg .tg-wc-hint {
+  margin: 10px 12px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--accent-bg, rgba(243, 186, 47, .12));
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.45;
+}
+html.tg .tg-wc-hint b { color: var(--accent); }

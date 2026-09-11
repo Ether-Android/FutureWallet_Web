@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html data-bs-theme="dark" data-theme="binance" lang="en">
+<head>
+<script src="../tg/frame-bridge.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
+<script src="theme-init.js"></script>
+<link href="vendor/bootstrap.min.css" rel="stylesheet"/>
+<link href="app.css" rel="stylesheet"/>
+<link href="../tg/tg-ui.css" rel="stylesheet"/>
+<title>FutureWallet Web3 Browser</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%; height: 100dvh; margin: 0; padding: 0;
+    overflow: hidden; display: flex; flex-direction: column;
+    background: var(--bg); color: var(--text); font-family: "Inter", -apple-system, sans-serif;
+  }
+
+  /* Top Navigation Header - two rows so the URL bar (the thing people actually need to read
+     and type into) isn't fighting the Connect button and network pill for space on one line;
+     that used to leave barely 6-7 characters of a URL visible. */
+  .browser-header {
+    display: flex; flex-direction: column; gap: 6px;
+    padding: max(8px, env(safe-area-inset-top)) 10px 8px 10px;
+    background: var(--bg-sub); border-bottom: 1px solid var(--line);
+    flex-shrink: 0; z-index: 20; width: 100%;
+  }
+  .header-row1 { display: flex; align-items: center; gap: 8px; width: 100%; }
+  .btn-wallet-back {
+    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+    background: var(--bg-alt); border: 1px solid var(--line); border-radius: 999px;
+    padding: 6px 10px; font-size: 11px; font-weight: 700; color: var(--accent);
+    cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; white-space: nowrap;
+  }
+  .btn-wallet-back:active { transform: scale(0.95); background: var(--accent-bg); }
+
+  .url-capsule {
+    flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px;
+    background: var(--bg-alt); border: 1px solid var(--line); border-radius: 999px;
+    padding: 5px 10px; transition: border-color 0.2s ease;
+  }
+  .url-capsule:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-bg); }
+  .url-capsule .search-ico { color: var(--muted); font-size: 12px; flex-shrink: 0; display: flex; }
+  .url-capsule input {
+    flex: 1; min-width: 0; border: 0; background: transparent; color: var(--text); padding: 2px 0;
+    font-size: 13px; outline: none; box-shadow: none !important;
+  }
+  .url-capsule input::placeholder { color: var(--muted); }
+  .reload-btn {
+    border: 0; background: transparent; color: var(--muted); font-size: 13px;
+    cursor: pointer; padding: 2px; flex-shrink: 0; transition: color 0.15s; display: flex;
+  }
+  .reload-btn:hover { color: var(--accent); }
+
+  .header-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .btn-connect-mini {
+    padding: 5px 10px; font-size: 11px; font-weight: 700; border-radius: 999px;
+    background: var(--accent); color: var(--on-accent); border: 0; cursor: pointer;
+    white-space: nowrap; box-shadow: 0 2px 8px rgba(243, 186, 47, 0.25); transition: all 0.15s ease;
+  }
+  .btn-connect-mini:active { transform: scale(0.95); }
+
+  .net-pill-mini {
+    display: inline-flex; align-items: center; gap: 5px; background: var(--bg-alt);
+    border: 1px solid var(--line); border-radius: 999px; padding: 4px 8px;
+    font-size: 11px; font-weight: 600; color: var(--text); cursor: pointer; flex-shrink: 0;
+  }
+  .net-pill-mini .netdot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+  /* Shortcuts Horizontal Bar */
+  .shortcuts-bar {
+    display: flex; gap: 8px; padding: 6px 10px; background: var(--bg-sub);
+    border-bottom: 1px solid var(--line); overflow-x: auto; flex-shrink: 0;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .shortcuts-bar::-webkit-scrollbar { display: none; }
+  .shortcuts-bar button {
+    padding: 5px 12px; font-size: 11px; font-weight: 600; white-space: nowrap;
+    border-radius: 999px; background: var(--bg-alt); border: 1px solid var(--line);
+    color: var(--text); cursor: pointer; transition: all 0.15s ease;
+  }
+  .shortcuts-bar button:hover, .shortcuts-bar button:active { border-color: var(--accent); color: var(--accent); }
+
+  /* Viewport Wrapper */
+  #frameWrap { flex: 1; position: relative; background: var(--bg); overflow: hidden; width: 100%; }
+  iframe { width: 100%; height: 100%; border: 0; background: #ffffff; }
+
+  /* Web3 dApp Discovery Hub */
+  .dapp-hub {
+    position: absolute; inset: 0; background: radial-gradient(circle at 50% 0%, var(--bg-alt) 0%, var(--bg) 75%);
+    overflow-y: auto; padding: 16px 12px; display: flex; flex-direction: column; gap: 14px; z-index: 5;
+  }
+  .dapp-hub-header { display: flex; align-items: center; justify-content: space-between; }
+  .dapp-hub-title { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; display: flex; align-items: center; gap: 6px; }
+  .dapp-hub-badge { font-size: 10px; font-weight: 700; background: var(--accent-bg); color: var(--accent); padding: 3px 8px; border-radius: 999px; }
+
+  /* Modern 2-Column CSS Grid */
+  .dapp-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+  .dapp-card {
+    background: var(--bg-alt); border: 1px solid var(--line); border-radius: 14px;
+    padding: 12px; cursor: pointer; transition: all 0.18s ease;
+    display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box;
+  }
+  .dapp-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .dapp-card:active { transform: scale(0.97); }
+  .dapp-card-head { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; }
+  .dapp-icon {
+    width: 34px; height: 34px; border-radius: 11px; background: var(--accent-bg);
+    display: flex; align-items: center; justify-content: center; font-size: 17px;
+    flex-shrink: 0; color: var(--accent-2);
+  }
+  .dapp-name { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+  .dapp-desc {
+    font-size: 11px; color: var(--muted); line-height: 1.35; width: 100%;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  /* Overlay Error */
+  .overlay {
+    position: absolute; inset: 0; background: rgba(11, 14, 17, 0.95);
+    backdrop-filter: blur(12px); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px; padding: 30px; text-align: center; z-index: 10;
+  }
+
+  /* Bottom Toolbar */
+  .browser-footer {
+    display: flex; align-items: center; justify-content: space-around;
+    padding: 8px 12px max(10px, env(safe-area-inset-bottom)); background: var(--bg-sub);
+    border-top: 1px solid var(--line); flex-shrink: 0; z-index: 20; width: 100%;
+  }
+  .foot-btn {
+    border: 0; background: transparent; color: var(--muted); font-size: 17px;
+    padding: 6px 14px; border-radius: 10px; cursor: pointer; transition: all 0.15s ease;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .foot-btn:hover { color: var(--accent); }
+  .foot-btn:active { transform: scale(0.92); }
+</style>
+</head>
+<body class="mobile">
+<!-- Top Navigation Header -->
+<div class="browser-header">
+  <div class="header-row1">
+    <button class="btn-wallet-back" id="btnBackToWallet" title="Return to Wallet"><span data-icon="back" data-icon-size="13"></span> Wallet</button>
+    <div class="url-capsule">
+      <span class="search-ico" data-icon="search" data-icon-size="14"></span>
+      <input autocomplete="off" id="url" placeholder="Search or enter dApp URL..." spellcheck="false"/>
+      <button class="reload-btn" id="reload" title="Reload"><span data-icon="reload" data-icon-size="14"></span></button>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn-connect-mini" id="btnInjectedConnect">⚡ Connect</button>
+    <button class="net-pill-mini" id="netPill"><span class="netdot" id="netDot"></span><span id="netName">ETH</span></button>
+  </div>
+</div>
+
+<!-- dApp Shortcuts Bar -->
+<div class="shortcuts-bar" id="shortcuts">
+  <button id="btnPairWc" style="background:rgba(243,186,47,0.2);border-color:var(--accent);color:var(--accent);">⚡ Pair WC</button>
+  <button data-url="https://app.uniswap.org/">🦄 Uniswap</button>
+  <button data-url="https://pancakeswap.finance/">🥞 PancakeSwap</button>
+  <button data-url="https://opensea.io/">⛵ OpenSea</button>
+  <button data-url="https://app.aave.com/">👻 Aave</button>
+  <button data-url="https://app.1inch.io/">🦄 1inch</button>
+  <button data-url="https://etherscan.io/">🔍 Etherscan</button>
+</div>
+
+<!-- Viewport Wrapper -->
+<div id="frameWrap">
+  <!-- Web3 dApp Discovery Hub (Pre-rendered for Instant Load) -->
+  <div class="dapp-hub" id="dappHub">
+    <div class="dapp-hub-header">
+      <div class="dapp-hub-title"><span>⚡</span> Explore Web3 dApps</div>
+      <div class="dapp-hub-badge">Verified</div>
+    </div>
+    
+    <div class="dapp-grid" id="dappGrid">
+      <div class="dapp-card" data-url="https://app.uniswap.org/">
+        <div class="dapp-card-head">
+          <div class="dapp-icon">🦄</div>
+          <div class="dapp-name">Uniswap</div>
+        </div>
+        <div class="dapp-desc">Swap tokens & trade on Decentralized Exchange</div>
+      </div>
+
+      <div class="dapp-card" data-url="https://pancakeswap.finance/">
+        <div class="dapp-card-head">
+          <div class="dapp-icon">🥞</div>
+          <div class="dapp-name">PancakeSwap</div>
+        </div>
+        <div class="dapp-desc">Trade, earn & yield farm on BNB & Ethereum</div>
+      </div>
+
+      <div class="dapp-card" data-url="https://opensea.io/">
+        <div class="dapp-card-head">
+          <div class="dapp-icon">⛵</div>
+          <div class="dapp-name">OpenSea</div>
+        </div>
+        <div class="dapp-desc">Discover, collect, and sell NFTs</div>
+      </div>
+
+      <div class="dapp-card" data-url="https://app.aave.com/">
+        <div class="dapp-card-head">
+          <div class="dapp-icon">👻</div>
+          <div class="dapp-name">Aave</div>
+        </div>
+        <div class="dapp-desc">Earn interest, borrow & lend crypto assets</div>
+      </div>
+
+      <div class="dapp-card" data-url="https://app.1inch.io/">
+        <div class="dapp-card-head">
+          <div class="dapp-icon">🦄</div>
+          <div class="dapp-name">1inch</div>
+        </div>
+        <div class="dapp-desc">DEX Aggregator for best crypto swap rates</div>
+      </div>
+
+      <div class="dapp-card" data-url="https://etherscan.io/">
+        <div class="dapp-card-head">
+          <div class="dapp-icon">🔍</div>
+          <div class="dapp-name">Etherscan</div>
+        </div>
+        <div class="dapp-desc">Ethereum Blockchain Explorer & Search</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Iframe for dApps -->
+  <iframe allow="clipboard-write" class="hidden" id="frame" referrerpolicy="no-referrer-when-downgrade"></iframe>
+  
+  <!-- Overlay Error -->
+  <div class="overlay hidden" id="overlay">
+    <h3 class="fw-bold text-white">Site loading issue</h3>
+    <p class="text-secondary small">Tap open below to view this Web3 site directly in browser mode.</p>
+    <button class="primary btn btn-primary rounded-pill fw-bold" id="ovOpen">Open in browser</button>
+  </div>
+</div>
+
+<!-- Bottom Action Toolbar -->
+<div class="browser-footer">
+  <button class="foot-btn" id="back" title="Back"><span data-icon="back" data-icon-size="18"></span></button>
+  <button class="foot-btn" id="fwd" title="Forward"><span data-icon="chevron" data-icon-size="18"></span></button>
+  <button class="foot-btn" id="home" title="dApp Hub"><span data-icon="discover" data-icon-size="18"></span></button>
+  <button class="foot-btn" id="toWallet" title="Main Wallet"><span data-icon="home" data-icon-size="18"></span></button>
+  <button class="foot-btn" id="acctPill" title="Account"><span id="acctName" data-icon="profile" data-icon-size="18"></span></button>
+</div>
+
+<!-- Network Selector Sheet -->
+<div class="sheet hidden" id="sheetNetwork">
+  <div class="inner card border-0 shadow-lg p-3">
+    <div class="handle"></div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:14px;text-align:center;color:var(--text);">Select Active Network</div>
+    <div id="netList" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <button class="primary link btn btn-primary rounded-pill fw-semibold" id="closeNetSheet" style="width:100%;margin-top:14px;padding:10px;">Close</button>
+  </div>
+</div>
+
+<script src="browser.js" type="module"></script>
+</body>
+</html>

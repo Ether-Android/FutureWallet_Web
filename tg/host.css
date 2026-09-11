@@ -1,0 +1,120 @@
+/* FutureWallet Telegram host shell. The wallet UI itself lives in ui/*.html (iframes). */
+:root {
+  --fw-bg: #0b0e11;
+  --fw-text: #eaecef;
+  --fw-muted: #848e9c;
+  --fw-accent: #f0b90b;
+  --fw-inset-top: 0px;
+  --fw-inset-bottom: 0px;
+  --fw-inset-left: 0px;
+  --fw-inset-right: 0px;
+}
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--fw-bg);
+  color: var(--fw-text);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+#stage {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  /* Telegram reports the usable height separately from window height (keyboard, bottom bar). */
+  height: var(--tg-viewport-height, 100%);
+  box-sizing: border-box;
+  padding: var(--fw-inset-top) var(--fw-inset-right) var(--fw-inset-bottom) var(--fw-inset-left);
+  background: var(--fw-bg);
+}
+.fw-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--fw-bg);
+}
+.fw-frame[hidden] { display: none; }
+#overlays { position: absolute; inset: 0; pointer-events: none; }
+.fw-overlay {
+  position: absolute;
+  left: var(--fw-inset-left);
+  right: var(--fw-inset-right);
+  top: var(--fw-inset-top);
+  bottom: var(--fw-inset-bottom);
+  pointer-events: auto;
+  background: var(--fw-bg);
+  animation: fw-slide-up .22s ease-out;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, .35);
+}
+.fw-overlay.closing { animation: fw-slide-down .18s ease-in forwards; }
+@keyframes fw-slide-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fw-slide-down { to { transform: translateY(40px); opacity: 0; } }
+
+.fw-center {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  box-sizing: border-box;
+  background: var(--fw-bg);
+}
+.fw-center[hidden] { display: none; }
+#splash { position: absolute; }
+.fw-center img { border-radius: 18px; }
+.fw-title { font-size: 20px; font-weight: 700; }
+.fw-muted { color: var(--fw-muted); margin: 0; max-width: 320px; }
+.fw-btn {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 12px 26px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fw-accent);
+  color: #0e1014;
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.fw-spinner {
+  width: 26px;
+  height: 26px;
+  margin-top: 10px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, .15);
+  border-top-color: var(--fw-accent);
+  animation: fw-spin .8s linear infinite;
+}
+@keyframes fw-spin { to { transform: rotate(360deg); } }
+
+#hostToast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--fw-inset-bottom) + 84px);
+  transform: translateX(-50%);
+  max-width: calc(100% - 40px);
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: rgba(30, 32, 38, .96);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.35;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .4);
+  z-index: 50;
+  text-align: center;
+  /* Informational only - never swallow taps meant for the wallet UI underneath. */
+  pointer-events: none;
+}
+#hostToast b { display: block; font-size: 14px; }
+#hostToast[hidden] { display: none; }

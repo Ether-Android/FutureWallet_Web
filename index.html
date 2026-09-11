@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<meta name="color-scheme" content="dark light"/>
+<meta name="referrer" content="no-referrer"/>
+<title>FutureWallet</title>
+<link rel="icon" href="icons/icon48.png"/>
+<link rel="stylesheet" href="tg/host.css"/>
+<!-- Telegram Mini Apps SDK: must be the first script (it reads the launch params from the URL hash). -->
+<script src="https://telegram.org/js/telegram-web-app.js?59"></script>
+<!-- Deployment settings (bot username, WalletConnect id, chains, API) - edit this file, not code. -->
+<script src="config.js"></script>
+<!-- chrome.* shim: must exist before the wallet engine (dist/background.js) evaluates. -->
+<script src="tg/chrome-shim.js"></script>
+<script type="module" src="tg/host.js"></script>
+</head>
+<body>
+<div id="stage">
+  <div id="splash" class="fw-center">
+    <img src="icons/icon128.png" width="72" height="72" alt=""/>
+    <div class="fw-title">FutureWallet</div>
+    <div class="fw-spinner"></div>
+  </div>
+  <iframe id="mainFrame" class="fw-frame" title="FutureWallet" hidden allow="clipboard-read; clipboard-write"></iframe>
+  <div id="overlays"></div>
+</div>
+<div id="gate" class="fw-center" hidden>
+  <img src="icons/icon128.png" width="72" height="72" alt=""/>
+  <div class="fw-title">Open FutureWallet in Telegram</div>
+  <p class="fw-muted" id="gateMsg">This wallet runs as a Telegram Mini App.</p>
+  <a class="fw-btn" id="gateLink" href="#">Open in Telegram</a>
+</div>
+<div id="fatal" class="fw-center" hidden>
+  <div class="fw-title">Something went wrong</div>
+  <p class="fw-muted" id="fatalMsg"></p>
+  <button class="fw-btn" id="fatalRetry" type="button">Reload</button>
+</div>
+<div id="hostToast" hidden></div>
+</body>
+</html>

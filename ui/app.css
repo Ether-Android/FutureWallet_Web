@@ -1,0 +1,785 @@
+/* FutureWallet UI — Web3 Binance Gold Dark Design System */
+
+:root {
+  --bg: #0b0e11;
+  --bg-alt: #181a20;
+  --bg-sub: #121418;
+  --card: #181a20;
+  --line: #2b3139;
+  --line-soft: #22262c;
+  --text: #eaecef;
+  --muted: #848e9c;
+  --accent: #f3ba2f;
+  --accent-2: #f8d12f;
+  --accent-dark: #f0b90b;
+  --accent-bg: rgba(243, 186, 47, 0.14);
+  --green: #0ecb81;
+  --red: #f6465d;
+  --amber: #f0b90b;
+  --amber-bg: rgba(240, 185, 11, 0.12);
+  --red-bg: rgba(246, 70, 93, 0.12);
+  --green-bg: rgba(14, 203, 129, 0.12);
+  --radius: 14px;
+  --radius-lg: 20px;
+  --shadow: 0 8px 28px rgba(0, 0, 0, .55);
+  --glow: 0 6px 22px rgba(243, 186, 47, .32);
+  /* Text/icon color for content sitting directly on --accent (primary buttons, the Send quick
+     action tile, ...). Dark text reads fine on this theme's bright yellow accent, but was
+     hardcoded that way everywhere - broke down the moment light theme's accent turned out to be
+     a saturated purple, where dark-on-dark-ish text is muddy. Themed alongside accent instead. */
+  --on-accent: #0e1014;
+  /* legacy aliases */
+  --blue: var(--accent);
+  --blue-dark: var(--accent-dark);
+  --blue-bg: var(--accent-bg);
+}
+
+/* ---- Bootstrap 5 theme bridge: point Bootstrap's own variables at our palette,
+   so every Bootstrap component (.btn, .card, .alert, .list-group, .form-control,
+   .nav-pills, .badge…) renders in the app's identity instead of Bootstrap's own
+   defaults. Loaded after vendor/bootstrap.min.css in every HTML file.
+   Deliberately NOT scoped to [data-bs-theme='dark'] (as it used to be) - every value below
+   already reads var(--bg)/var(--text)/etc, which are themselves already theme-reactive via
+   [data-theme='light']/[data-theme='binance'] elsewhere in this file. Gating this block on
+   data-bs-theme meant it only ever activated for the one value popup.html happens to hardcode
+   in markup ("dark") - switching to Light only ever repainted the custom variables above, so
+   every Bootstrap component relying on one of THESE bridged variables kept using Bootstrap's own
+   un-bridged light-mode stock colors on top of the app's light background. Applying this
+   unconditionally (on :root, so it's always active regardless of what data-bs-theme is set to)
+   fixes that at the source, on top of popup.js now also keeping data-bs-theme itself in sync. */
+:root {
+  --bs-body-bg: var(--bg);
+  --bs-body-color: var(--text);
+  --bs-emphasis-color: var(--text);
+  --bs-secondary-color: var(--muted);
+  --bs-tertiary-bg: var(--bg-alt);
+  --bs-secondary-bg: var(--card);
+  --bs-border-color: var(--line);
+  --bs-border-color-translucent: var(--line-soft);
+  --bs-border-radius: var(--radius);
+  --bs-border-radius-lg: var(--radius-lg);
+  --bs-border-radius-sm: 10px;
+  --bs-border-radius-pill: 999px;
+  --bs-primary: var(--accent);
+  --bs-primary-rgb: 124, 92, 255;
+  --bs-link-color: var(--accent-2);
+  --bs-link-color-rgb: 167, 139, 250;
+  --bs-link-hover-color: var(--accent);
+  --bs-focus-ring-color: var(--accent-bg);
+  --bs-danger: var(--red);
+  --bs-success: var(--green);
+  --bs-warning: var(--amber);
+  --bs-card-bg: var(--card);
+  --bs-card-border-color: var(--line-soft);
+  --bs-list-group-bg: transparent;
+  --bs-list-group-color: var(--text);
+  --bs-list-group-border-color: var(--line-soft);
+  --bs-list-group-action-hover-bg: var(--bg-alt);
+  --bs-list-group-active-bg: var(--accent);
+  --bs-list-group-active-border-color: var(--accent);
+  --bs-nav-pills-link-active-bg: var(--accent);
+  --bs-alert-border-radius: var(--radius);
+}
+.btn-primary { --bs-btn-bg: var(--accent); --bs-btn-border-color: var(--accent);
+  --bs-btn-hover-bg: var(--accent-dark); --bs-btn-hover-border-color: var(--accent-dark);
+  --bs-btn-active-bg: var(--accent-dark); --bs-btn-active-border-color: var(--accent-dark);
+  --bs-btn-box-shadow: var(--glow); box-shadow: var(--glow); }
+.btn-outline-light { --bs-btn-color: var(--text); --bs-btn-border-color: var(--line);
+  --bs-btn-hover-bg: var(--bg-alt); --bs-btn-hover-border-color: var(--accent);
+  --bs-btn-hover-color: var(--text); --bs-btn-active-bg: var(--bg-alt); }
+.btn-outline-secondary { --bs-btn-color: var(--text); --bs-btn-border-color: var(--line);
+  --bs-btn-hover-bg: var(--bg-alt); --bs-btn-hover-border-color: var(--accent); --bs-btn-hover-color: var(--text); }
+.btn-outline-danger { --bs-btn-color: var(--red); --bs-btn-border-color: var(--red); --bs-btn-hover-bg: var(--red-bg); }
+.form-control { background: var(--bg-alt); border-color: var(--line); color: var(--text); }
+.form-control:focus { background: var(--bg-alt); color: var(--text); border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
+
+/* ============ input with a leading icon (e.g. lock screen password) ============ */
+.input-icon { position: relative; }
+.input-icon .ii { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); display: flex; pointer-events: none; }
+.input-icon input { padding-left: 42px; }
+
+/* ============ brand badge (onboarding / lock screen) ============ */
+.brand-badge {
+  width: 84px; height: 84px; border-radius: 26px; margin: 0 auto;
+  background: linear-gradient(140deg, var(--accent), #4f2bd6);
+  box-shadow: var(--glow); display: flex; align-items: center; justify-content: center; color: #fff;
+}
+.nav-pills .nav-link { color: var(--muted); border-radius: 999px; cursor: pointer; }
+.nav-pills .nav-link.on, .nav-pills .nav-link.active { color: var(--on-accent); background: var(--accent); }
+.list-group-item.rowitem:hover { background: var(--bg-alt) !important; }
+.badge.text-bg-secondary { background: var(--bg-alt) !important; color: var(--muted); }
+
+[data-theme='binance'] {
+  --bg: #0d0f12; --bg-alt: #181a20; --bg-sub: #121418; --card: #181a20;
+  --line: #2b3139; --line-soft: #22262c; --text: #eaecef; --muted: #848e9c;
+  --accent: #fcd535; --accent-2: #f8d12f; --accent-dark: #f0b90b;
+  --accent-bg: rgba(252, 213, 53, .12); --glow: 0 6px 22px rgba(240, 185, 11, .28);
+  --green: #0ecb81; --red: #f6465d;
+}
+
+[data-theme='light'] {
+  --bg: #ffffff; --bg-alt: #f4f4f8; --bg-sub: #fafafc; --card: #ffffff;
+  --line: #e2e2ea; --line-soft: #eeeef4; --text: #16161f; --muted: #6b6b80;
+  --accent: #6a48f5; --accent-2: #7c5cff; --accent-dark: #5836e0;
+  --accent-bg: rgba(106, 72, 245, .1); --shadow: 0 6px 20px rgba(20, 20, 40, .1);
+  --glow: 0 6px 20px rgba(106, 72, 245, .22);
+  /* This theme's accent is a saturated purple, not the other themes' bright yellow - dark text
+     (the :root default) is muddy against it, white reads correctly here. */
+  --on-accent: #ffffff;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('fonts/Inter.woff2') format('woff2-variations'), url('fonts/Inter.woff2') format('woff2');
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+
+html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+body.mobile {
+  height: 100dvh;
+}
+/* Chrome remembers whatever size a user last dragged an extension's popup window to (per
+   extension id, persisted in its own profile prefs) and reuses it on every future open,
+   completely ignoring what this page's CSS asks for on that dimension - on either axis, not just
+   width. A hard `600px !important` height only controls how *this content* lays out - it can't
+   make Chrome's popup window itself shrink back down once it's been dragged taller, so a
+   previously-resized popup ends up with genuine dead space past 600px no CSS change here can
+   close (the bottom nav sits at 600px, everything below it to the window's real bottom edge is
+   just empty canvas). Filling to 100% on both axes instead means whatever size the window
+   actually is (360x600 by default, larger if a user dragged it) always gets used, so there's
+   never a gap - a fixed width/max-height could only ever match by coincidence. */
+html:not(.mobile):not(.page), body:not(.mobile):not(.page), html.popup, body.popup {
+  width: 100%;
+  height: 100%;
+  min-width: 360px;
+  min-height: 600px;
+}
+body.page {
+  width: 100%;
+  min-width: 0;
+  min-height: 100vh;
+  overflow-y: auto;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+body.page > .appbar,
+body.page > .screen {
+  width: 100%;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+.hidden { display: none !important; }
+
+/* ============ top bar ============ */
+.appbar {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px 8px;
+  flex-shrink: 0; background: var(--bg);
+}
+.acctbtn {
+  flex: 1; display: flex; align-items: center; gap: 8px; cursor: pointer; min-width: 0;
+  background: transparent; border: 1px solid transparent; border-radius: 999px; padding: 3px 10px 3px 3px;
+  height: 34px; transition: background .15s, border-color .15s;
+}
+.acctbtn:hover, .acctbtn:active { background: var(--card); border-color: var(--line); }
+.acctbtn .ident { box-shadow: 0 0 0 1.5px var(--line-soft); }
+.acctbtn .meta { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; max-width: 100%; flex: 1 1 auto; }
+.acctbtn .chev { flex-shrink: 0; color: var(--muted); }
+.acctbtn b, .acctbtn small { display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.acctbtn b { font-size: 14px; font-weight: 600; line-height: 1.3; }
+.acctbtn small { color: var(--muted); font-size: 12px; font-family: ui-monospace, monospace; cursor: pointer; transition: color .15s; line-height: 1.3; }
+.acctbtn small:hover { color: var(--accent-2); }
+.iconbtn {
+  background: var(--card); color: var(--text); font-size: 16px; line-height: 1;
+  width: 34px; height: 34px; border-radius: 11px; cursor: pointer; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line);
+  padding: 0;
+}
+.iconbtn:hover { border-color: var(--accent); color: var(--accent-2); }
+.netbtn {
+  display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-soft);
+  background: var(--bg-alt); border-radius: 999px; padding: 0 11px 0 8px; font-size: 13px; font-weight: 500;
+  cursor: pointer; color: var(--text); max-width: 128px; height: 32px; flex-shrink: 0;
+  transition: border-color .15s;
+}
+.netbtn:hover, .netbtn:active { border-color: var(--accent); }
+.netdot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.ident, .tokenlogo { border-radius: 50%; display: block; flex-shrink: 0; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; }
+
+/* ============ screens ============ */
+.screen { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 4px 14px 18px; animation: slideIn .18s ease-out; }
+.screen.flat { padding: 0 0 18px; }
+@keyframes slideIn { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+
+h1 { font-size: 24px; font-weight: 700; margin: 6px 0; letter-spacing: -.4px; }
+h2 { font-size: 17px; font-weight: 600; margin: 4px 0 12px; }
+h3 { font-size: 12.5px; font-weight: 600; margin: 18px 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+p { margin: 0 0 10px; }
+.muted { color: var(--muted); font-size: 13.5px; }
+.center { text-align: center; }
+.mono { font-family: ui-monospace, monospace; }
+.screen-head { display: flex; align-items: center; gap: 10px; padding: 4px 0 12px; }
+.screen-head h2 { flex: 1; margin: 0; text-align: center; }
+
+/* ============ portfolio card ============ */
+.portfolio {
+  position: relative; overflow: hidden;
+  background: linear-gradient(160deg, var(--card) 0%, var(--bg-alt) 120%);
+  border: 1px solid var(--line-soft); border-radius: var(--radius-lg);
+  padding: 18px 18px 14px; margin: 6px 0 18px; box-shadow: var(--shadow);
+}
+/* A quiet accent glow in the corner - reads as "premium surface" without tinting the whole card
+   or competing with the numbers, which is where the eye actually needs to land. */
+.portfolio::before {
+  content: ''; position: absolute; top: -60px; right: -60px; width: 160px; height: 160px;
+  background: radial-gradient(circle, var(--accent-bg) 0%, transparent 70%); pointer-events: none;
+}
+.portfolio .label { font-size: 12.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; font-weight: 600; }
+.portfolio-top { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
+.portfolio-balrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; position: relative; z-index: 1; }
+.portfolio .amount { font-size: 34px; font-weight: 700; letter-spacing: -1.1px; margin: 6px 0 0; line-height: 1.1; }
+.bal-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.bal-ico {
+  width: 27px; height: 27px; border-radius: 9px; background: transparent; border: 1px solid transparent;
+  color: var(--muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+  transition: background .15s, color .15s;
+}
+.bal-ico:hover, .bal-ico:active { background: var(--bg-alt); color: var(--accent-2); }
+.unread-dot { position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; border-radius: 50%; background: var(--red); border: 1.5px solid var(--bg-alt); }
+.notif-row { padding: 10px 4px; border-bottom: 1px solid var(--line); }
+.notif-row:last-child { border-bottom: none; }
+.notif-row .title { font-weight: 600; font-size: 15px; }
+.notif-row .body { font-size: 14.5px; color: var(--muted); margin-top: 2px; }
+.notif-row .time { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.bal-ico.spinning svg { animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.portfolio .change { font-size: 14.5px; font-weight: 600; margin-top: 5px; position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; }
+.portfolio .change .sep { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: .5; flex-shrink: 0; }
+.portfolio .change .range-label { color: var(--muted); font-weight: 500; }
+.change.up { color: var(--green); }
+.change.down { color: var(--red); }
+.spark-wrap { position: relative; margin-top: 6px; }
+#spark, #tdSpark { width: 100%; height: 64px; display: block; touch-action: pan-y; }
+.spark-tip {
+  position: absolute; top: 0; padding: 4px 9px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  background: var(--bg-alt); border: 1px solid var(--line); color: var(--text); pointer-events: none;
+  transform: translateX(-50%); white-space: nowrap; box-shadow: var(--shadow); z-index: 2;
+}
+.ranges { display: flex; gap: 4px; margin-top: 8px; position: relative; z-index: 1; }
+.range {
+  flex: 1; text-align: center; font-size: 12.5px; padding: 6px 0; border-radius: 8px;
+  color: var(--muted); cursor: pointer; border: 1px solid transparent; font-weight: 500;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.range.on { background: var(--accent-bg); color: var(--accent-2); border-color: var(--accent); font-weight: 700; }
+
+/* ============ icon tiles ============ */
+/* One rounded-square icon component, reused everywhere an icon needs a tile background:
+   quick actions, dApp hub cards/categories, receive actions, settings rows. Size via .sm/.md/.lg,
+   .solid swaps the default accent-tinted look for a plain card+border tile (dApp/category tiles). */
+.icon-tile {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  background: var(--accent-bg); color: var(--accent-2); transition: background .15s ease, color .15s ease;
+}
+.icon-tile svg { display: block; }
+.icon-tile.sm { width: 30px; height: 30px; border-radius: 9px; }
+.icon-tile.md { width: 34px; height: 34px; border-radius: 11px; }
+.icon-tile.lg { width: 46px; height: 46px; border-radius: 15px; }
+.icon-tile.solid { background: var(--card); border: 1px solid var(--line-soft); color: var(--text); }
+
+/* ============ quick actions ============ */
+.actions { display: flex; gap: 9px; margin: 6px 0 20px; }
+.action {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text);
+  background: var(--card); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 14px 4px 12px;
+  transition: transform .12s, border-color .15s;
+}
+.action:hover { border-color: var(--accent); }
+.action:active { transform: scale(.95); }
+/* Send is the primary action - filled accent tile with inverted icon color, same visual weight
+   a "primary" button gets everywhere else in the app, so it reads as the default/expected tap. */
+.action-primary .icon-tile { background: var(--accent); color: var(--on-accent); box-shadow: 0 4px 14px -2px var(--accent-bg); }
+.action-primary:hover { border-color: var(--accent); }
+
+/* ============ lists ============ */
+.section-head { display: flex; align-items: center; gap: 8px; margin: 4px 0 8px; }
+.section-head h3 { margin: 0; flex: 1; }
+.section-head .mini { font-size: 13.5px; color: var(--accent-2); cursor: pointer; white-space: nowrap; }
+.section-head .mini + .mini { margin-left: 10px; }
+.listhead { display: flex; align-items: center; flex-wrap: nowrap; padding: 6px 0; }
+.listhead h3, .listhead > :first-child { flex: 1; min-width: 0; margin: 0; }
+.listhead .mini { font-size: 12.5px; color: var(--accent-2); cursor: pointer; white-space: nowrap; }
+.listhead .mini + .mini { margin-left: 10px; }
+
+.rowitem {
+  display: flex; align-items: center; gap: 12px; padding: 12px;
+  background: var(--card); border: 1px solid transparent; border-radius: var(--radius);
+  cursor: pointer; margin-bottom: 6px; transition: border-color .15s, transform .1s;
+  animation: rowIn .22s ease-out backwards;
+}
+.rowitem:hover { border-color: var(--line); }
+.rowitem:active { transform: scale(.99); }
+@keyframes rowIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .rowitem { animation: none; } }
+.rowitem .grow { flex: 1; min-width: 0; }
+.rowitem .title, .rowitem .sub { display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rowitem .title { font-size: 15px; font-weight: 500; }
+.rowitem .sub { font-size: 12.5px; color: var(--muted); font-family: ui-monospace, monospace; }
+.rowitem .right { text-align: right; font-size: 15px; font-weight: 500; white-space: nowrap; }
+.rowitem .right .sub { font-weight: 400; }
+.tokenicon {
+  width: 36px; height: 36px; border-radius: 50%; background: var(--bg-alt); color: var(--muted);
+  display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 600; flex-shrink: 0;
+  box-sizing: border-box; overflow: hidden; line-height: 1; white-space: nowrap; letter-spacing: -0.2px; text-align: center;
+}
+.tokenicon.tinted { color: #fff; }
+.tokenlogo { width: 36px; height: 36px; background: var(--bg-alt); object-fit: cover; }
+.empty { text-align: center; color: var(--muted); font-size: 14.5px; padding: 34px 16px; }
+
+/* ============ bottom navigation ============ */
+/* A floating elevated bar rather than a flush-to-edge strip - margin + shadow + its own rounded
+   corners on top of the base bar, so it reads as a surface sitting above the content instead of
+   part of the screen's own edge. */
+.bottomnav {
+  display: flex; flex-shrink: 0; background: var(--bg-alt);
+  border: 1px solid var(--line-soft); border-radius: 20px;
+  /* top: auto is what pushes this to the bottom of the screen's flex column - keep it. */
+  margin: auto 10px max(10px, env(safe-area-inset-bottom));
+  padding: 6px 4px; box-shadow: 0 8px 24px -6px rgba(0, 0, 0, .45);
+  z-index: 1000;
+}
+.navitem {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 8px 0; font-size: 12px; font-weight: 500; color: var(--muted); cursor: pointer; border-radius: 14px;
+  transition: color .15s ease, background .18s ease; position: relative;
+}
+.navitem .ico { display: flex; line-height: 1; margin-bottom: 1px; transition: transform .18s cubic-bezier(.34,1.56,.64,1); }
+.navitem.on { color: var(--accent-2); font-weight: 700; background: var(--accent-bg); }
+.navitem.on .ico { transform: translateY(-1px) scale(1.08); }
+.navitem:active { transform: scale(.94); }
+
+/* ============ tabs / filters ============ */
+.tabs { display: flex; gap: 6px; margin: 4px 0 12px; }
+.tab {
+  flex: 1; text-align: center; padding: 9px 0; font-size: 13.5px; color: var(--muted);
+  cursor: pointer; border-radius: 999px; border: 1px solid var(--line); background: var(--card);
+}
+.tab.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+.segment { display: flex; gap: 6px; margin-bottom: 12px; }
+.segment .seg {
+  flex: 1; text-align: center; font-size: 13.5px; padding: 8px 0; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--card); cursor: pointer; color: var(--muted);
+}
+.segment .seg.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+#actFilter {
+  flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+#actFilter::-webkit-scrollbar { display: none; }
+#actFilter .seg { flex: 0 0 auto; font-size: 13.5px; padding: 8px 14px; white-space: nowrap; }
+
+/* ============ cards, forms ============ */
+.card { background: var(--card); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 14px; }
+.card.alt { background: var(--bg-alt); border-color: transparent; }
+
+label { display: block; font-size: 13.5px; font-weight: 500; color: var(--muted); margin: 14px 0 6px; }
+input, textarea, select {
+  width: 100%; font: inherit; color: var(--text); background: var(--card);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; outline: none;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
+input::placeholder, textarea::placeholder { color: var(--muted); }
+textarea { min-height: 88px; resize: vertical; font-family: ui-monospace, monospace; font-size: 14.5px; }
+select { cursor: pointer; }
+.searchbox { position: relative; margin-bottom: 12px; }
+.searchbox input { padding-left: 38px; }
+.searchbox::before {
+  content: '⌕'; position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); font-size: 18px; pointer-events: none;
+}
+
+button {
+  font: inherit; cursor: pointer; border-radius: 999px; padding: 13px 18px;
+  border: 1px solid var(--line); background: var(--card); color: var(--text);
+  font-weight: 600; font-size: 15px; transition: .14s;
+}
+button:hover { border-color: var(--accent); }
+button.primary, .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; box-shadow: var(--glow); }
+button.primary:hover, .btn-primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); color: var(--on-accent); }
+button.plain:hover { background: var(--bg-alt); }
+button.danger { border-color: var(--red); color: var(--red); }
+button.danger:hover { background: var(--red-bg); }
+button.link { border: 0; background: none; color: var(--accent-2); padding: 6px; font-weight: 500; }
+button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.btnrow { display: flex; gap: 10px; }
+.btnrow > button { flex: 1; }
+.footer { padding: 14px; border-top: 1px solid var(--line-soft); background: var(--bg); flex-shrink: 0; }
+
+/* ============ key/value, badges, alerts ============ */
+.kv { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line-soft); font-size: 14.5px; }
+.kv:last-child { border-bottom: 0; }
+.kv span { color: var(--muted); flex-shrink: 0; }
+.kv b { font-weight: 600; text-align: right; word-break: break-all; }
+
+/* Admin announcements: several can be live at once, so they scroll as one continuous right-to-left
+   ticker instead of stacking or replacing each other. The track is the joined text rendered twice
+   back to back; animating from 0 to -50% moves exactly one copy's width, so the second copy is
+   already in place to continue the loop with no visible seam or restart jump. */
+.ann-ticker-wrap { display: flex; align-items: center; }
+.ann-ticker { flex: 1; overflow: hidden; white-space: nowrap; }
+.ann-track { display: inline-block; white-space: nowrap; will-change: transform; animation: ann-scroll linear infinite; }
+.ann-track .ann-sep { margin: 0 28px; opacity: .5; }
+.ann-track b { font-weight: 600; }
+@keyframes ann-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .ann-track { animation: none; } }
+
+.badge { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--bg-alt); color: var(--muted); white-space: nowrap; }
+.badge.ok { background: var(--green-bg); color: var(--green); }
+.badge.pending { background: var(--amber-bg); color: var(--amber); }
+.badge.failed { background: var(--red-bg); color: var(--red); }
+
+.alert { border-radius: var(--radius); padding: 12px 14px; font-size: 13.5px; line-height: 1.55; }
+.alert.warn { background: var(--amber-bg); color: #f0b354; border: 1px solid rgba(245,158,11,.3); }
+.alert.danger { background: var(--red-bg); color: #ff8a8a; border: 1px solid rgba(239,68,68,.3); }
+.alert.info { background: var(--accent-bg); color: var(--accent-2); border: 1px solid rgba(124,92,255,.3); }
+
+.code {
+  font-family: ui-monospace, monospace; font-size: 12.5px; background: var(--bg-alt);
+  border: 1px solid var(--line-soft); border-radius: 10px; padding: 12px;
+  max-height: 140px; overflow: auto; white-space: pre-wrap; word-break: break-all;
+}
+
+/* ============ seed phrase ============ */
+.words { display: flex; flex-wrap: wrap; gap: 8px; }
+.words span {
+  flex: 0 0 calc((100% - 16px) / 3);
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  padding: 11px 6px; font-size: 14px; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.words span b { color: var(--muted); font-weight: 500; margin-right: 5px; font-size: 12.5px; }
+.words span.wrong { border-color: var(--red); background: rgba(246, 70, 93, .12); color: var(--red); }
+.words span.wrong b { color: var(--red); }
+.chipwrap { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  border: 1px solid var(--line); border-radius: 999px; padding: 9px 15px;
+  font-size: 13.5px; cursor: pointer; background: var(--card); color: var(--text); transition: .14s;
+}
+.chip:hover { border-color: var(--accent); }
+.chip.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+
+/* ============ send screen hero amount ============ */
+.sendhero {
+  background: linear-gradient(155deg, var(--card) 0%, var(--bg-alt) 100%);
+  border: 1px solid var(--line); border-radius: var(--radius-lg);
+  padding: 14px 16px 12px; margin: 4px 0 16px; box-shadow: var(--shadow);
+}
+.sendhero-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.asset-chip {
+  display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 999px;
+  padding: 6px 12px 6px 6px; background: var(--card); cursor: pointer; transition: .14s; min-width: 0;
+}
+.asset-chip:hover { border-color: var(--accent); }
+.asset-chip .sym { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.asset-chip .chev { display: flex; color: var(--muted); }
+.sendamount-input {
+  display: block; width: 100%; background: transparent; border: 0; outline: none; color: var(--text);
+  font-size: 34px; font-weight: 700; letter-spacing: -1px; padding: 14px 0 2px; font-family: inherit;
+}
+.sendamount-input::placeholder { color: var(--muted); opacity: .5; }
+.sendhero-sub { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13.5px; color: var(--muted); }
+
+.checkrow { display: flex; align-items: flex-start; gap: 10px; margin: 16px 0 10px; font-size: 14.5px; }
+.checkrow input { width: 18px; height: 18px; margin: 1px 0 0; flex-shrink: 0; accent-color: var(--accent); }
+
+/* ============ toggles ============ */
+.switch { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid var(--line-soft); font-size: 15px; gap: 12px; }
+.switch:last-of-type { border-bottom: 0; }
+.switch input[type='checkbox'] {
+  appearance: none; -webkit-appearance: none; width: 44px; height: 25px; border-radius: 999px;
+  background: var(--line); position: relative; cursor: pointer; flex-shrink: 0;
+  transition: background .18s; border: 0; padding: 0;
+}
+.switch input[type='checkbox']::after {
+  content: ''; position: absolute; top: 3px; left: 3px; width: 19px; height: 19px;
+  border-radius: 50%; background: var(--muted); transition: transform .18s, background .18s;
+}
+.switch input[type='checkbox']:checked { background: var(--accent); }
+.switch input[type='checkbox']:checked::after { transform: translateX(19px); background: #fff; }
+
+/* ============ settings groups ============ */
+.setgroup { background: var(--card); border: 1px solid var(--line-soft); border-radius: var(--radius); overflow: hidden; margin-bottom: 14px; }
+.setgroup .rowitem { background: transparent; border: 0; border-bottom: 1px solid var(--line-soft); border-radius: 0; margin: 0; }
+.setgroup .rowitem:last-child { border-bottom: 0; }
+.setgroup .switch { padding: 14px; margin: 0; border-bottom: 1px solid var(--line-soft); }
+.setgroup .switch:last-child { border-bottom: 0; }
+.setgroup .rowitem .icon-tile { margin-right: 2px; }
+.chev { color: var(--muted); display: flex; }
+.chev svg { display: block; }
+
+/* ============ NFTs ============ */
+.nftgrid { display: flex; flex-wrap: wrap; gap: 12px; }
+.nftcard {
+  flex: 0 0 calc((100% - 12px) / 2);
+  border: 1px solid var(--line-soft); border-radius: var(--radius); overflow: hidden;
+  cursor: pointer; background: var(--card); transition: .14s;
+}
+.nftcard:hover { border-color: var(--accent); transform: translateY(-2px); }
+.nftcard img { width: 100%; height: 108px; object-fit: cover; display: block; background: var(--bg-alt); }
+.nftcard .cap { padding: 9px 10px 11px; font-size: 13.5px; }
+.nftcard .cap .muted { font-size: 12.5px; }
+.nfthero { width: 100%; height: 200px; object-fit: cover; border-radius: var(--radius-lg); background: var(--bg-alt); display: block; }
+.proprow { display: flex; flex-wrap: wrap; gap: 8px; }
+.prop { flex: 0 0 calc((100% - 16px) / 3); background: var(--bg-alt); border: 1px solid var(--line-soft); border-radius: 10px; padding: 9px; text-align: center; }
+.prop .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.prop .v { font-size: 13.5px; font-weight: 600; margin-top: 2px; }
+
+/* ============ receive ============ */
+.receive-card { text-align: center; }
+.receive-asset-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.qrwrap { background: #fff; border-radius: var(--radius-lg); padding: 14px; display: inline-block; margin: 6px auto; }
+.addrbox {
+  display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 12px 14px; margin-top: 14px;
+}
+.addrbox .a { flex: 1; font-family: ui-monospace, monospace; font-size: 12.5px; word-break: break-all; text-align: left; }
+.iconrow { display: flex; gap: 10px; margin-top: 12px; }
+.iconrow .ia { flex: 1; text-align: center; background: var(--card); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 12px 4px; cursor: pointer; font-size: 12.5px; color: var(--muted); }
+.iconrow .ia .ico { display: flex; justify-content: center; margin-bottom: 4px; color: var(--text); }
+.iconrow .ia:hover { border-color: var(--accent); color: var(--text); }
+
+/* ============ swap ============ */
+.swapcard { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
+.swapcard .top { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--muted); margin-bottom: 8px; }
+.swapcard .mid { display: flex; align-items: center; gap: 10px; }
+.swap-token-logo { flex: 0 0 auto; display: flex; }
+.swap-token-logo img, .swap-token-logo .tokenicon { width: 22px; height: 22px; }
+.swapcard .asset-chip { flex: 0 0 auto; background: var(--bg-alt); }
+.swapcard input { flex: 1; border: 0; background: transparent; text-align: right; font-size: 20px; font-weight: 600; padding: 0; }
+.swapcard input:focus { box-shadow: none; }
+.swapswitch { display: flex; justify-content: center; margin: -10px 0; position: relative; z-index: 2; }
+.swapswitch button { width: 38px; height: 38px; padding: 0; border-radius: 12px; background: var(--bg-alt); border: 3px solid var(--bg); font-size: 16px; }
+
+/* ============ gas ============ */
+.gasopt { display: flex; align-items: center; gap: 10px; padding: 13px; border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; margin-bottom: 9px; transition: .14s; }
+.gasopt:hover { border-color: var(--accent); }
+.gasopt.on { border-color: var(--accent); background: var(--accent-bg); }
+.gasopt .grow { flex: 1; }
+
+/* ============ sheets & dialogs ============ */
+/* Must clear .bottomnav's z-index: 1000 - otherwise the nav bar renders on top of any sheet tall
+   enough to reach it, burying its Close button underneath (untappable, looks missing). */
+.sheet { position: absolute; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: flex-end; z-index: 1100; animation: fade .14s ease-out; }
+@keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+.sheet .inner {
+  background: var(--bg-alt); width: 100%; border-radius: 22px 22px 0 0; padding: 18px 16px 20px;
+  max-height: 88%; overflow: auto; animation: sheetUp .22s cubic-bezier(.16,1,.3,1);
+  border-top: 1px solid var(--line);
+}
+@keyframes sheetUp { from { transform: translateY(100%) } to { transform: none } }
+.sheet .handle { width: 38px; height: 4px; background: var(--line); border-radius: 2px; margin: 0 auto 14px; }
+
+.dlg-backdrop { position: fixed; inset: 0; z-index: 1200; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; padding: 20px; animation: fade .12s ease-out; }
+.dlg { background: var(--bg-alt); border: 1px solid var(--line); border-radius: 18px; padding: 20px; width: 100%; max-width: 330px; max-height: 84vh; overflow: auto; animation: dlgIn .16s cubic-bezier(.16,1,.3,1); }
+@keyframes dlgIn { from { opacity: 0; transform: scale(.96) translateY(8px) } to { opacity: 1; transform: none } }
+.dlg-title { font-size: 17px; font-weight: 600; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dlg-body { font-size: 14.5px; color: var(--muted); line-height: 1.55; white-space: pre-wrap; }
+.dlg-actions { display: flex; gap: 10px; margin-top: 18px; }
+.dlg-actions button { flex: 1; }
+.dlg-actions.stacked { flex-direction: column; }
+.dlg-actions.stacked button { flex: 0 0 auto; width: 100%; }
+.dlg label { margin-top: 12px; }
+
+/* ============ misc ============ */
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 78px; z-index: 60; background: var(--bg-alt); border: 1px solid var(--line); color: var(--text); padding: 11px 16px; border-radius: 12px; font-size: 14.5px; max-width: 300px; box-shadow: var(--shadow); }
+.pwbar { height: 5px; background: var(--bg-alt); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+.pwbar i { display: block; height: 100%; width: 0; transition: width .2s, background .2s; }
+.detailhero { text-align: center; padding: 16px 0 12px; }
+.detailhero .big { font-size: 30px; font-weight: 700; letter-spacing: -.5px; }
+.sk { background: linear-gradient(90deg, var(--bg-alt) 25%, var(--line-soft) 37%, var(--bg-alt) 63%); background-size: 400% 100%; animation: shimmer 1.2s infinite linear; border-radius: 6px; }
+@keyframes shimmer { from { background-position: 100% 0 } to { background-position: 0 0 } }
+.sk-circle { width: 36px; height: 36px; border-radius: 50%; }
+.sk-line { height: 11px; margin: 5px 0; }
+/* Was margin: auto-centered - the portfolio card used to be text-align:center; it's now a
+   left-aligned flex layout (see .portfolio-balrow), so this needs to sit at the row's start too. */
+.sk-amount { height: 30px; width: 150px; margin: 4px 0 0; }
+.copied { color: var(--green) !important; }
+
+/* scrollbars */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+* { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+
+/* expanded tab (Unified Mobile View for Extension) */
+html:has(body.page) {
+  background: #07080a;
+}
+body.page {
+  width: 100%;
+  max-width: 400px;
+  min-height: 100vh;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--line-soft);
+  position: relative;
+  overflow-x: hidden;
+}
+
+body.page .appbar {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+body.page .screen {
+  width: 100%;
+  max-width: 100%;
+  flex: 1;
+  margin: 0;
+  padding: 4px 14px 18px;
+  background: var(--bg);
+  border: none;
+  border-radius: 0;
+}
+
+/* ---------- token detail screen ---------- */
+.td-hero { padding: 6px 2px 4px; text-align: center; }
+.td-hero-top { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; text-align: left; }
+.td-logo-wrap { flex-shrink: 0; }
+.td-logo { display: block; border-radius: 50%; box-shadow: 0 0 0 3px var(--bg), 0 0 22px -4px var(--accent-2); }
+.td-hero-names { flex: 1; min-width: 0; }
+.td-symbol { font-size: 19px; font-weight: 700; letter-spacing: -.2px; }
+.td-fullname { font-size: 14px; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.td-net-badge { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; padding: 5px 10px; }
+.td-net-badge img, .td-net-badge svg { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+
+.td-balance { font-size: 32px; font-weight: 700; letter-spacing: -1px; margin-top: 2px; }
+.td-price-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px; }
+.td-price-row .change { font-size: 14px; font-weight: 600; }
+
+.td-chart-card { margin-top: 16px; padding: 14px 8px 10px; }
+.td-chart-wrap { position: relative; height: 130px; }
+#tdSpark { width: 100%; height: 130px; display: block; touch-action: pan-y; }
+.td-chart-tip {
+  position: absolute; top: 2px; padding: 4px 9px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  background: var(--bg-alt); border: 1px solid var(--line); color: var(--text); pointer-events: none;
+  transform: translateX(-50%); white-space: nowrap; box-shadow: var(--shadow); z-index: 2;
+}
+
+.td-actions { display: flex; gap: 10px; margin-top: 16px; }
+.td-action {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 12px 4px 10px; border-radius: var(--radius); border: 1px solid var(--line);
+  background: var(--card); color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; transition: transform .12s, background .12s;
+}
+.td-action:active { transform: scale(.96); }
+.td-action-primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+.td-addr-card { margin-top: 14px; }
+.td-addr-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.td-copy-btn {
+  display: flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--bg-alt); color: var(--accent-2); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: color .15s, border-color .15s;
+}
+.td-copy-btn.copied { color: var(--green); border-color: var(--green); }
+.td-addr-text { font-size: 14px; line-height: 1.55; word-break: break-all; color: var(--text); }
+.td-explorer-link {
+  display: flex; align-items: center; gap: 6px; margin-top: 12px; padding: 0; border: 0; background: none;
+  color: var(--accent-2); font-size: 14px; font-weight: 600; cursor: pointer;
+}
+
+.td-verify { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 12px; border-radius: var(--radius); font-size: 13.5px; line-height: 1.4; }
+.td-verify.ok { background: var(--green-bg); color: var(--green); }
+.td-verify.caution { background: var(--amber-bg); color: var(--amber); }
+.td-verify b { font-weight: 600; }
+
+.td-info-card { margin-top: 14px; }
+.td-info-card h3 { font-size: 12.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; }
+
+body.page .screen[data-view='home'] {
+  max-width: 480px;
+}
+
+body.page h1 { font-size: 24px; }
+
+/* Spacing fallbacks — flex `gap` is ignored by some older engines */
+.rowitem > * + * { margin-left: 12px; }
+.btnrow > button + button { margin-left: 10px; }
+.actions > .action + .action { margin-left: 8px; }
+.tabs > .tab + .tab, .segment > .seg + .seg { margin-left: 6px; }
+.words > span, .chipwrap > .chip, .nftgrid > .nftcard, .dappgrid > .dappcard { margin: 0 0 0 0; }
+.appbar > * + * { margin-left: 10px; }
+.iconrow > .ia + .ia { margin-left: 10px; }
+
+
+/* ============ polish pass ============ */
+
+/* Images with no src rendered as blank boxes — give them a real placeholder */
+img.nfthero:not([src]), img.ident:not([src]), img.tokenlogo:not([src]) {
+  background: linear-gradient(135deg, var(--bg-alt), var(--line-soft));
+}
+img.nfthero:not([src]) { min-height: 200px; }
+
+/* Native selects looked inconsistent with the rest of the fields */
+select {
+  appearance: none; -webkit-appearance: none; padding-right: 38px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+                    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 19px) calc(50% + 2px), calc(100% - 14px) calc(50% + 2px);
+  background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+}
+.swapcard select { padding-right: 34px; background-position: calc(100% - 16px) calc(50% + 2px), calc(100% - 11px) calc(50% + 2px); }
+
+/* Default file input is an OS control that ignores the theme */
+input[type='file'] {
+  padding: 10px 12px; font-size: 13.5px; color: var(--muted); cursor: pointer;
+}
+input[type='file']::-webkit-file-upload-button {
+  font: inherit; font-size: 13.5px; font-weight: 600; margin-right: 12px; cursor: pointer;
+  background: var(--bg-alt); color: var(--text); border: 1px solid var(--line);
+  border-radius: 999px; padding: 8px 14px;
+}
+input[type='file']::-webkit-file-upload-button:hover { border-color: var(--accent); }
+
+/* A numeric field inside a toggle row needs its own treatment */
+.numrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 14px; border-bottom: 1px solid var(--line-soft); font-size: 15px; }
+.numrow:last-child { border-bottom: 0; }
+.numrow input { width: 82px; text-align: center; padding: 9px 10px; font-size: 15px; }
+
+/* Read-only fields should not look editable */
+input[readonly] { color: var(--muted); cursor: default; }
+input[readonly]:focus { border-color: var(--line); box-shadow: none; }
