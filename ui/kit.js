@@ -33,6 +33,15 @@ export function identicon(address, size = 32) {
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
 
+/** Same as identicon(), but returns the address's chosen NFT avatar image when one is set
+ * (avatarsMap is S.accountAvatars, address.toLowerCase() -> {image}) - falls back to the
+ * deterministic identicon otherwise. Only meaningful for the wallet's own accounts; contacts have
+ * no avatar concept. */
+export function avatarFor(address, size = 32, avatarsMap) {
+  const set = avatarsMap && avatarsMap[(address || '').toLowerCase()];
+  return (set && set.image) || identicon(address, size);
+}
+
 export function avatarEl(address, size = 32) {
   const img = document.createElement('img');
   img.src = identicon(address, size);

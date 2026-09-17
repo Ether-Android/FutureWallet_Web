@@ -1,6 +1,6 @@
 import { call, $, $$, short, toast, show, copy, fmt, esc, safeImg, confirmDialog, promptDialog, chooseDialog, withBusy } from './api.js';
 import { drawQR } from '../dist/qr.js';
-import { identicon, symbolColor, timeAgo, skeletonRows, drawSparkline, drawDonut, passwordStrength, icon, fmtFiat, fiatSymbol } from './kit.js';
+import { identicon, avatarFor, symbolColor, timeAgo, skeletonRows, drawSparkline, drawDonut, passwordStrength, icon, fmtFiat, fiatSymbol } from './kit.js';
 import { tokenLogo, chainLogo } from './logos.js';
 
 // Both html and body need the class: app.css's fixed-360x600 popup box is gated on
@@ -209,7 +209,7 @@ async function refresh() {
       S.selectedAddress = acct.address;
       $('#acctName').textContent = acct.name + (acct.readOnly ? ' (watch)' : '');
       $('#acctAddr').textContent = short(acct.address, 5);
-      $('#acctAvatar').src = identicon(acct.address, 26);
+      $('#acctAvatar').src = avatarFor(acct.address, 26, S.accountAvatars);
     }
     // Fiat mode shows the portfolio's total fiat value with no symbol suffix (set by
     // renderBalDisplay() once loadOverview()'s fiat fetch resolves) - stamping the native coin's
@@ -764,25 +764,60 @@ function rowItem(icon, title, sub, right, onclick) {
 }
 
 let currentNft = null;
+let nftViewChainId = null; // null until renderNftChainTabs() sets it to S.network.chainId or a discovered chain
+let nftSelectMode = false;
+const selectedNftKeys = new Set(); // `${contract}:${tokenId}`, ERC-1155 same-contract only
 
-function openNft(n) {
-  currentNft = n;
-  const img = $('#ndImage');
-  const src = safeImg(n.image);
-  if (src) {
-    img.src = src;
-    img.classList.remove('hidden');
+function nftKey(n) { return `${n.contract.toLowerCase()}:${n.tokenId}`; }
+
+function setNftMedia(n) {
+  const img = $('#ndImage'), video = $('#ndVideo'), audioWrap = $('#ndAudioWrap'), audio = $('#ndAudio'), model = $('#ndModel');
+  img.classList.add('hidden'); video.classList.add('hidden'); audioWrap.classList.add('hidden'); model.classList.add('hidden');
+  video.pause?.(); video.removeAttribute('src'); audio.pause?.(); audio.removeAttribute('src'); model.removeAttribute('src');
+  if (n.mediaType === 'video' && n.animationUrl) {
+    video.src = n.animationUrl; video.classList.remove('hidden');
+  } else if (n.mediaType === 'audio' && n.animationUrl) {
+    audio.src = n.animationUrl; audioWrap.classList.remove('hidden');
+  } else if (n.mediaType === 'model' && n.animationUrl) {
+    model.src = n.animationUrl; model.classList.remove('hidden');
   } else {
-    img.removeAttribute('src');
-    img.classList.add('hidden'); // no artwork: don't leave a 200px empty box
+    const src = safeImg(n.image);
+    if (src) { img.src = src; img.classList.remove('hidden'); } else { img.removeAttribute('src'); img.classList.add('hidden'); }
   }
+}
+
+function renderNftTraits(attributes) {
+  const el = $('#ndTraits');
+  if (!attributes || !attributes.length) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+  el.classList.remove('hidden');
+  el.innerHTML = attributes.slice(0, 12).map((a) => `<div class="prop"><div class="k">${esc(a.trait_type || a.traitType || '')}</div><div class="v">${esc(String(a.value ?? ''))}</div></div>`).join('');
+}
+
+async function openNft(n, chainId) {
+  currentNft = n;
+  currentNft.chainId = chainId;
+  setNftMedia(n);
   $('#ndTitle').textContent = n.name || 'NFT';
   $('#ndName').textContent = `${n.name || 'NFT'} #${n.tokenId}`;
   $('#ndContract').textContent = n.contract;
   $('#ndTokenId').textContent = n.tokenId;
   $('#ndStandard').textContent = n.standard === 'erc1155' ? 'ERC-1155' : 'ERC-721';
-  $('#ndNetwork').textContent = S.network.name;
+  $('#ndNetwork').textContent = (S.networks.find((net) => Number(net.chainId) === Number(chainId)) || S.network).name;
+  renderNftTraits(n.attributes);
+  $('#ndFloorRow').classList.add('hidden');
   view('nftDetail');
+  // Floor price / on-chain rarity attributes aren't needed for the grid, so they're fetched lazily
+  // once the detail screen actually opens rather than during every scan.
+  call('getNftFloorPrice', { contract: n.contract, chainId }).then((fp) => {
+    if (!fp || currentNft !== n) return;
+    $('#ndFloor').textContent = `${fp.price} ${fp.currency} (${fp.marketplace})`;
+    $('#ndFloorRow').classList.remove('hidden');
+  }).catch(() => {});
+  if (!n.attributes || !n.attributes.length) {
+    call('getNftRarity', { contract: n.contract, tokenId: n.tokenId, chainId }).then((traits) => {
+      if (currentNft === n) renderNftTraits(traits.map((t) => ({ trait_type: t.trait, value: `${t.value} (${Math.round(t.prevalence * 100)}%)` })));
+    }).catch(() => {});
+  }
 }
 
 $('#ndTransfer').onclick = async () => {
@@ -792,11 +827,14 @@ $('#ndTransfer').onclick = async () => {
     body: `${currentNft.name} #${currentNft.tokenId}`, okLabel: 'Send'
   });
   if (!to) return;
-  try {
-    const h = await call('sendNft', { from: S.selectedAddress, to, contract: currentNft.contract, tokenId: currentNft.tokenId });
-    toast('Sent ' + short(h, 5));
-    view('nfts'); renderNfts();
-  } catch (e) { toast(e.message.slice(0, 120)); }
+  const btn = $('#ndTransfer');
+  await withBusy(btn, 'Sending…', async () => {
+    try {
+      const h = await call('sendNft', { from: S.selectedAddress, to, contract: currentNft.contract, tokenId: currentNft.tokenId, standard: currentNft.standard });
+      toast('Sent ' + short(h, 5));
+      view('nfts'); renderNfts();
+    } catch (e) { toast(e.message.slice(0, 120)); }
+  });
 };
 
 $('#ndRemove').onclick = async () => {
@@ -806,19 +844,123 @@ $('#ndRemove').onclick = async () => {
   view('nfts'); renderNfts();
 };
 
+$('#ndSetAvatar').onclick = async () => {
+  if (!currentNft || !currentNft.image) { toast('This NFT has no image to use as an avatar'); return; }
+  if (!(await confirmDialog('Set as avatar', `Use ${currentNft.name} #${currentNft.tokenId} as your account avatar?`))) return;
+  await call('setAccountAvatar', { address: S.selectedAddress, contract: currentNft.contract, tokenId: currentNft.tokenId, image: currentNft.image });
+  S.accountAvatars = { ...(S.accountAvatars || {}), [S.selectedAddress.toLowerCase()]: { contract: currentNft.contract, tokenId: currentNft.tokenId, image: currentNft.image } };
+  $('#acctAvatar').src = currentNft.image;
+  toast('Avatar updated');
+};
+
+$('#ndListMarketplace').onclick = async () => {
+  if (!currentNft) return;
+  const slug = await call('marketplaceChainSlug', { chainId: currentNft.chainId }).catch(() => null);
+  if (!slug) { toast('OpenSea does not list this network'); return; }
+  const btn = $('#ndListMarketplace');
+  await withBusy(btn, 'Checking…', async () => {
+    try {
+      const approved = await call('isNftApproved', { address: S.selectedAddress, contract: currentNft.contract });
+      if (!approved) {
+        const ok = await confirmDialog('Approve OpenSea', 'A one-time on-chain approval lets OpenSea transfer this collection\'s NFTs on your behalf when a listing sells. This does not list or sell anything by itself.', { okLabel: 'Approve' });
+        if (!ok) return;
+        btn.textContent = 'Approving…';
+        const h = await call('grantNftApproval', { from: S.selectedAddress, contract: currentNft.contract });
+        toast('Approved ' + short(h, 5));
+      }
+      // Telegram: openExplorerUrl -> openDapp() already routes external links through
+      // TG.openExternal() when running inside the Mini App - no extra branch needed here.
+      openExplorerUrl(`https://opensea.io/assets/${slug}/${currentNft.contract}/${currentNft.tokenId}`);
+    } catch (e) { toast(e.message.slice(0, 120)); }
+  });
+};
+
 $('#ndExplorer').onclick = () => openExplorerUrl(S.network?.explorer && currentNft ? `${S.network.explorer.replace(/\/$/, '')}/token/${currentNft.contract}?a=${currentNft.tokenId}` : null);
 
+async function renderNftChainTabs() {
+  const chains = await call('nftChains', { address: S.selectedAddress }).catch(() => []);
+  const el = $('#nftChainTabs');
+  if (nftViewChainId == null) nftViewChainId = Number(S.network.chainId);
+  if (!chains.includes(nftViewChainId)) chains.push(nftViewChainId);
+  if (chains.length < 2) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+  el.classList.remove('hidden');
+  el.innerHTML = chains.map((cid) => {
+    const net = S.networks.find((n) => Number(n.chainId) === cid);
+    return `<span class="seg nav-link py-1 px-3 ${cid === nftViewChainId ? 'on' : ''}" data-chain="${cid}">${esc(net ? net.name : cid)}</span>`;
+  }).join('');
+  $$('#nftChainTabs .seg').forEach((s) => {
+    s.onclick = () => { nftViewChainId = Number(s.dataset.chain); renderNftChainTabs(); renderNfts(); };
+  });
+}
+
+function updateNftBatchBar() {
+  const bar = $('#nftBatchBar');
+  bar.classList.toggle('hidden', selectedNftKeys.size === 0);
+  $('#nftBatchCount').textContent = `${selectedNftKeys.size} selected`;
+}
+
+$('#btnNftSelectMode').onclick = () => {
+  nftSelectMode = !nftSelectMode;
+  $('#btnNftSelectMode').textContent = nftSelectMode ? 'Cancel' : 'Select';
+  if (!nftSelectMode) selectedNftKeys.clear();
+  renderNfts();
+};
+
+$('#nftBatchSend').onclick = async () => {
+  const items = [...selectedNftKeys].map((k) => { const [contract, tokenId] = k.split(':'); return { contract, tokenId }; });
+  if (!items.length) return;
+  const to = await promptDialog('Send selected NFTs', { label: 'Recipient address', placeholder: '0x… or name.eth', body: `${items.length} NFTs, one transaction`, okLabel: 'Send' });
+  if (!to) return;
+  try {
+    const h = await call('sendNftBatch', { from: S.selectedAddress, to, contract: items[0].contract, tokenIds: items.map((i) => i.tokenId) });
+    toast('Sent ' + short(h, 5));
+    nftSelectMode = false; $('#btnNftSelectMode').textContent = 'Select'; selectedNftKeys.clear();
+    renderNfts();
+  } catch (e) { toast(e.message.slice(0, 120)); }
+};
+
+$('#btnScanNft').onclick = async () => {
+  const btn = $('#btnScanNft');
+  if (!S.settings.alchemyApiKey) { toast('Add an Alchemy API key in Settings first'); return; }
+  // Icon-only button - withBusy() would wipe its child <svg> by rewriting textContent, so this
+  // just disables it instead of swapping in a label.
+  btn.disabled = true;
+  skeletonRows($('#nftGrid'), 4);
+  try {
+    await call('discoverNfts', { address: S.selectedAddress });
+    toast('Scan complete');
+  } catch (e) { toast(e.message.slice(0, 120)); }
+  await renderNftChainTabs();
+  await renderNfts();
+  btn.disabled = false;
+};
+
 async function renderNfts() {
-  const list = await call('nfts', { address: S.selectedAddress }).catch(() => []);
+  if (nftViewChainId == null) await renderNftChainTabs();
+  const list = await call('nftsForChain', { address: S.selectedAddress, chainId: nftViewChainId }).catch(() => []);
   const el = $('#nftGrid');
   el.innerHTML = list.length ? '' : '<div class="empty" style="grid-column:1/-1">No NFTs imported</div>';
+  // Batch selection only makes sense for one ERC-1155 contract at a time, sent in one
+  // safeBatchTransferFrom call - lock selection to whichever contract was picked first.
+  const lockedContract = selectedNftKeys.size ? [...selectedNftKeys][0].split(':')[0] : null;
   list.forEach((n) => {
     const d = document.createElement('div');
-    d.className = 'nftcard';
-    d.innerHTML = `<img src="${safeImg(n.image)}" onerror="this.style.background='var(--bg-alt)';this.removeAttribute('src')" /><div class="cap"><div>${esc(n.name)}</div><div class="muted">#${esc(n.tokenId)}</div></div>`;
-    d.onclick = () => openNft(n);
+    const key = nftKey(n);
+    const selectable = nftSelectMode && n.standard === 'erc1155' && (!lockedContract || n.contract.toLowerCase() === lockedContract);
+    d.className = `nftcard${nftSelectMode ? ' selecting' : ''}${selectedNftKeys.has(key) ? ' selected' : ''}${nftSelectMode && !selectable ? ' disabled' : ''}`;
+    d.innerHTML = `<img src="${safeImg(n.image)}" onerror="this.style.background='var(--bg-alt)';this.removeAttribute('src')" /><div class="selbox"></div><div class="cap"><div>${esc(n.name)}</div><div class="muted">#${esc(n.tokenId)}</div></div>`;
+    d.onclick = () => {
+      if (nftSelectMode) {
+        if (!selectable) { if (n.standard !== 'erc1155') toast('Only ERC-1155 NFTs can be batch-sent'); return; }
+        selectedNftKeys.has(key) ? selectedNftKeys.delete(key) : selectedNftKeys.add(key);
+        updateNftBatchBar(); renderNfts();
+      } else {
+        openNft(n, nftViewChainId);
+      }
+    };
     el.appendChild(d);
   });
+  updateNftBatchBar();
 }
 
 // Icon by transaction *kind* (send/receive/swap/approve/nft), not status - the status badge
@@ -1364,7 +1506,7 @@ function renderAccounts() {
     const d = document.createElement('div');
     d.className = 'rowitem';
     const img = document.createElement('img');
-    img.className = 'ident'; img.width = img.height = 32; img.src = identicon(a.address, 32);
+    img.className = 'ident'; img.width = img.height = 32; img.src = avatarFor(a.address, 32, S.accountAvatars);
     const meta = document.createElement('div');
     meta.className = 'grow';
     meta.innerHTML = `<div class="title">${esc(a.name)} ${a.address === S.selectedAddress ? `<span style="color:var(--accent-2);display:inline-flex;vertical-align:middle">${icon('check', { size: 13 })}</span>` : ''}</div>
@@ -2240,7 +2382,7 @@ $$('.navitem').forEach((n) => (n.onclick = () => openTab(n.dataset.nav)));
 async function openTab(id) {
   navStack.length = 0;
   if (id === 'assets') { view('assets'); renderTokens(); renderAllocation(); return; }
-  if (id === 'nfts') { view('nfts'); renderNfts(); return; }
+  if (id === 'nfts') { nftViewChainId = null; view('nfts'); renderNfts(); return; }
   if (id === 'swap') return openSwap();
   if (id === 'history') { view('history'); loadActivity(); return; }
   if (id === 'settings') return openScreen('settings');
@@ -2502,7 +2644,7 @@ async function manageSite(origin, perm) {
       const on = picked.has(a.address.toLowerCase());
       const d = document.createElement('div');
       d.className = 'rowitem';
-      d.innerHTML = `<img class="ident" width="32" height="32" src="${identicon(a.address, 32)}" />
+      d.innerHTML = `<img class="ident" width="32" height="32" src="${avatarFor(a.address, 32, S.accountAvatars)}" />
         <div class="grow"><div class="title">${esc(a.name)}</div><div class="sub">${short(a.address, 5)}</div></div>
         <span class="badge ${on ? 'ok' : ''}">${on ? 'shared' : 'share'}</span>`;
       d.onclick = () => {
@@ -2538,6 +2680,7 @@ function fillSettings() {
   $('#setChart').checked = s.showChart !== false; $('#setLogos').checked = s.showTokenLogos !== false;
   $('#setNotif').checked = !!s.notifications; $('#setPhish').checked = !!s.phishingProtection; $('#setNonce').checked = !!s.useCustomNonce;
   $('#setWcProjectId').value = s.wcProjectId || '';
+  $('#setAlchemyKey').value = s.alchemyApiKey || '';
   $('#setSwapProvider').value = s.swapProvider; $('#setSwapKey').value = s.swapApiKey || '';
   $('#setSlippage').value = (s.slippageBps / 100).toString(); $('#setDeadline').value = s.deadlineMinutes;
   $('#setBiometricRow').classList.toggle('hidden', !NativeBiometric);
@@ -2587,6 +2730,7 @@ $('#saveSettings').onclick = async () => {
       showChart: $('#setChart').checked, showTokenLogos: $('#setLogos').checked,
       notifications: $('#setNotif').checked, phishingProtection: $('#setPhish').checked, useCustomNonce: $('#setNonce').checked,
       wcProjectId: $('#setWcProjectId').value.trim(),
+      alchemyApiKey: $('#setAlchemyKey').value.trim(),
       swapProvider: $('#setSwapProvider').value, swapApiKey: $('#setSwapKey').value.trim(),
       slippageBps: Math.round(Number($('#setSlippage').value || 0.5) * 100), deadlineMinutes: Number($('#setDeadline').value || 20)
     }

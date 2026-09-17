@@ -557,6 +557,20 @@ button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
 .nftcard .cap { padding: 9px 10px 11px; font-size: 13.5px; }
 .nftcard .cap .muted { font-size: 12.5px; }
 .nfthero { width: 100%; height: 200px; object-fit: cover; border-radius: var(--radius-lg); background: var(--bg-alt); display: block; }
+.nftaudio { display: flex; align-items: center; justify-content: center; padding: 0 16px; }
+.nftbatchbar {
+  position: sticky; bottom: 0; display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; padding: 10px 14px; background: var(--card); border-top: 1px solid var(--line-soft);
+}
+.nftcard { position: relative; }
+.nftcard .selbox {
+  position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid #fff; background: rgba(0,0,0,.35); display: none;
+}
+.nftcard.selecting .selbox { display: block; }
+.nftcard.selected .selbox { background: var(--accent); border-color: var(--accent); }
+.nftcard.selected { outline: 2px solid var(--accent); }
+.nftcard.disabled { opacity: .4; cursor: not-allowed; }
 .proprow { display: flex; flex-wrap: wrap; gap: 8px; }
 .prop { flex: 0 0 calc((100% - 16px) / 3); background: var(--bg-alt); border: 1px solid var(--line-soft); border-radius: 10px; padding: 9px; text-align: center; }
 .prop .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }

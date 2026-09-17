@@ -26875,6 +26875,8 @@ var initial = () => ({
   // chainId -> [{address,symbol,decimals}]
   nfts: {},
   // `${chainId}:${owner}` -> [{address,tokenId,standard,name,image}]
+  accountAvatars: {},
+  // address.toLowerCase() -> {contract, tokenId, image}
   contacts: [],
   // [{name, address, note}]
   history: {},
@@ -26901,6 +26903,7 @@ var initial = () => ({
     biometricEnabled: APP.biometricEnabled,
     hideZeroBalance: false,
     wcProjectId: "",
+    alchemyApiKey: "",
     swapProvider: SWAP.provider,
     swapApiKey: SWAP.apiKey,
     slippageBps: SWAP.slippageBps,
@@ -55572,7 +55575,98 @@ var ERC721_ABI = [
   "function name() view returns (string)",
   "function safeTransferFrom(address,address,uint256)"
 ];
-var ERC1155_ABI = ["function balanceOf(address,uint256) view returns (uint256)", "function uri(uint256) view returns (string)"];
+var ERC1155_ABI = [
+  "function balanceOf(address,uint256) view returns (uint256)",
+  "function uri(uint256) view returns (string)",
+  "function safeTransferFrom(address,address,uint256,uint256,bytes)",
+  "function safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)"
+];
+
+// ---- NFT discovery/floor-price/rarity (ported from src/background/nft.js - see PATCHES.md) ----
+var ALCHEMY_TG = { chainSlugs: { 1: "eth-mainnet", 137: "polygon-mainnet", 42161: "arb-mainnet", 10: "opt-mainnet", 8453: "base-mainnet", 56: "bnb-mainnet" } };
+var MARKETPLACE_TG = { openSeaChainSlugs: { 1: "ethereum", 137: "matic", 42161: "arbitrum", 10: "optimism", 8453: "base", 56: "bsc" } };
+function fwResolveIpfs(url) {
+  if (!url) return "";
+  return url.startsWith("ipfs://") ? url.replace("ipfs://", "https://ipfs.io/ipfs/") : url;
+}
+function fwGuessMediaType(animationUrl) {
+  const url = (animationUrl || "").toLowerCase().split("?")[0];
+  if ([".glb", ".gltf"].some((ext) => url.endsWith(ext))) return "model";
+  if ([".mp4", ".webm", ".mov", ".m4v"].some((ext) => url.endsWith(ext))) return "video";
+  if ([".mp3", ".wav", ".ogg", ".m4a"].some((ext) => url.endsWith(ext))) return "audio";
+  return "image";
+}
+function fwAlchemyBase(chainId, apiKey) {
+  const slug = ALCHEMY_TG.chainSlugs[Number(chainId)];
+  if (!slug || !apiKey) return null;
+  return `https://${slug}.g.alchemy.com/nft/v3/${apiKey}`;
+}
+async function discoverNftsForChain(address, chainId, apiKey) {
+  const base = fwAlchemyBase(chainId, apiKey);
+  if (!base) return [];
+  const out = [];
+  let pageKey = "";
+  for (let page = 0; page < 10; page++) {
+    const url = `${base}/getNFTsForOwner?owner=${address}&withMetadata=true&pageSize=100${pageKey ? `&pageKey=${encodeURIComponent(pageKey)}` : ""}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Alchemy request failed (${res.status})`);
+    const data = await res.json();
+    for (const n of data.ownedNfts || []) {
+      const image = fwResolveIpfs(n.image?.cachedUrl || n.image?.originalUrl || n.raw?.metadata?.image || "");
+      const animationUrl = fwResolveIpfs(n.raw?.metadata?.animation_url || "");
+      out.push({
+        contract: getAddress(n.contract.address),
+        tokenId: String(n.tokenId),
+        standard: String(n.contract.tokenType || "erc721").toLowerCase(),
+        name: n.name || n.raw?.metadata?.name || `#${n.tokenId}`,
+        image, mediaType: fwGuessMediaType(animationUrl), animationUrl,
+        collection: n.contract.name || n.collection?.name || "",
+        attributes: n.raw?.metadata?.attributes || []
+      });
+    }
+    pageKey = data.pageKey || "";
+    if (!pageKey) break;
+  }
+  return out;
+}
+async function discoverAllChains({ address, apiKey }) {
+  const out = {};
+  for (const chainId of Object.keys(ALCHEMY_TG.chainSlugs)) {
+    try {
+      const list = await discoverNftsForChain(address, Number(chainId), apiKey);
+      if (list.length) out[chainId] = list;
+    } catch {}
+  }
+  return out;
+}
+async function getFloorPrice(contract, chainId, apiKey) {
+  const base = fwAlchemyBase(chainId, apiKey);
+  if (!base) return null;
+  const res = await fetch(`${base}/getFloorPrice?contractAddress=${contract}`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  for (const marketplace of ["openSea", "looksRare"]) {
+    const m = data[marketplace];
+    if (m && !m.error && m.floorPrice != null) return { price: m.floorPrice, currency: m.priceCurrency || "ETH", marketplace: marketplace === "openSea" ? "OpenSea" : "LooksRare" };
+  }
+  return null;
+}
+async function getRarity(contract, tokenId, chainId, apiKey) {
+  const base = fwAlchemyBase(chainId, apiKey);
+  if (!base) return [];
+  const res = await fetch(`${base}/computeRarity?contractAddress=${contract}&tokenId=${tokenId}`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return (data.rarities || []).map((r) => ({ trait: r.traitType, value: r.value, prevalence: r.prevalence }));
+}
+var OPENSEA_SPENDER_TG = "0x00000000000000adc04c56bf30ac9d3c0aaf14dc";
+function buildApprovalTx({ from: from9, token, spender }) {
+  return { from: from9, to: token, data: IFACE721.encodeFunctionData("setApprovalForAll", [spender, true]), value: "0x0" };
+}
+async function isApprovedForAllTg({ provider, token, owner, spender }) {
+  const c = new Contract(token, ["function isApprovedForAll(address,address) view returns (bool)"], provider);
+  return c.isApprovedForAll(owner, spender);
+}
 function kindFromMethod(method) {
   if (method === "approve" || method === "increaseAllowance" || method === "setApprovalForAll") return "approve";
   if (method === "transfer" || method === "transferFrom" || method === "safeTransferFrom") return "send";
@@ -55649,7 +55743,13 @@ var READ_ONLY_METHODS = /* @__PURE__ */ new Set([
   "lookupName",
   "checkRecipient",
   "preflight",
-  "wcSessions"
+  "wcSessions",
+  "getNftFloorPrice",
+  "getNftRarity",
+  "isNftApproved",
+  "marketplaceChainSlug",
+  "nftsForChain",
+  "nftChains"
 ]);
 var pending = /* @__PURE__ */ new Map();
 var MAX_PENDING = 3;
@@ -56106,6 +56206,7 @@ var ui = {
       settings: s3.settings,
       permissions: s3.permissions,
       contacts: s3.contacts,
+      accountAvatars: s3.accountAvatars,
       backupDone: s3.backupDone,
       maintenance: getMaintenance(),
       // Announcements: a scrolling ticker on the home screen (several can be live at once) -
@@ -56305,12 +56406,21 @@ var ui = {
     const s3 = await State2.get();
     return s3.nfts[`${net.chainId}:${address.toLowerCase()}`] || [];
   },
+  async nftsForChain({ address, chainId }) {
+    const s3 = await State2.get();
+    return s3.nfts[`${chainId}:${address.toLowerCase()}`] || [];
+  },
+  async nftChains({ address }) {
+    const s3 = await State2.get();
+    const suffix = `:${address.toLowerCase()}`;
+    return Object.keys(s3.nfts).filter((k9) => k9.endsWith(suffix) && s3.nfts[k9].length).map((k9) => Number(k9.split(":")[0]));
+  },
   async addNft({ address, contract, tokenId, standard = "erc721" }) {
     const net = await State2.currentNetwork();
     const s3 = await State2.get();
     const provider = await getProvider2(net);
     const c7 = new Contract(contract, standard === "erc1155" ? ERC1155_ABI : ERC721_ABI, provider);
-    let name2 = "NFT", image = "", uri = "";
+    let name2 = "NFT", image = "", animationUrl = "", attributes = [], uri = "";
     try {
       name2 = standard === "erc1155" ? "ERC-1155" : await c7.name();
     } catch {
@@ -56322,14 +56432,45 @@ var ui = {
         const meta = await fetch(url).then((r4) => r4.json());
         name2 = meta.name || name2;
         image = (meta.image || "").replace("ipfs://", "https://ipfs.io/ipfs/");
+        animationUrl = (meta.animation_url || "").replace("ipfs://", "https://ipfs.io/ipfs/");
+        attributes = meta.attributes || [];
       }
     } catch {
     }
+    const mediaType = /\.(glb|gltf)(\?|$)/i.test(animationUrl) ? "model" : /\.(mp4|webm|mov|m4v)(\?|$)/i.test(animationUrl) ? "video" : /\.(mp3|wav|ogg|m4a)(\?|$)/i.test(animationUrl) ? "audio" : "image";
     const k8 = `${net.chainId}:${address.toLowerCase()}`;
     const list = s3.nfts[k8] || [];
     if (list.some((n6) => n6.contract.toLowerCase() === contract.toLowerCase() && n6.tokenId === String(tokenId))) throw new Error("Already added");
-    await State2.set({ nfts: { ...s3.nfts, [k8]: [...list, { contract: getAddress(contract), tokenId: String(tokenId), standard, name: name2, image }] } });
+    await State2.set({ nfts: { ...s3.nfts, [k8]: [...list, { contract: getAddress(contract), tokenId: String(tokenId), standard, name: name2, image, animationUrl, mediaType, attributes, collection: "" }] } });
     return true;
+  },
+  async discoverNfts({ address }) {
+    const s3 = await State2.get();
+    const apiKey = s3.settings.alchemyApiKey;
+    if (!apiKey) throw new Error("Add an Alchemy API key in Settings first");
+    const byChain = await discoverAllChains({ address, apiKey });
+    let nfts = s3.nfts;
+    for (const [chainId, found] of Object.entries(byChain)) {
+      const k8 = `${chainId}:${address.toLowerCase()}`;
+      const existing = nfts[k8] || [];
+      const have = new Set(existing.map((n6) => `${n6.contract.toLowerCase()}:${n6.tokenId}`));
+      const merged = [...existing, ...found.filter((n6) => !have.has(`${n6.contract.toLowerCase()}:${n6.tokenId}`))];
+      nfts = { ...nfts, [k8]: merged };
+    }
+    await State2.set({ nfts });
+    return byChain;
+  },
+  async getNftFloorPrice({ contract, chainId }) {
+    const s3 = await State2.get();
+    const apiKey = s3.settings.alchemyApiKey;
+    if (!apiKey) return null;
+    return getFloorPrice(contract, chainId, apiKey).catch(() => null);
+  },
+  async getNftRarity({ contract, tokenId, chainId }) {
+    const s3 = await State2.get();
+    const apiKey = s3.settings.alchemyApiKey;
+    if (!apiKey) return [];
+    return getRarity(contract, tokenId, chainId, apiKey).catch(() => []);
   },
   async removeNft({ address, contract, tokenId }) {
     const net = await State2.currentNetwork();
@@ -56340,16 +56481,59 @@ var ui = {
     });
     return true;
   },
-  async sendNft({ from: from8, to: to3, contract, tokenId }) {
+  async sendNft({ from: from8, to: to3, contract, tokenId, standard = "erc721", amount = "1" }) {
     await ensureUnlocked();
     const provider = await getProvider2();
     const signer = keyring.signerFor(from8).connect(provider);
-    const c7 = new Contract(contract, ERC721_ABI, signer);
-    const tx = await c7.safeTransferFrom(from8, to3, tokenId);
     const net = await State2.currentNetwork();
+    let tx;
+    if (standard === "erc1155") {
+      const c7 = new Contract(contract, ERC1155_ABI, signer);
+      tx = await c7.safeTransferFrom(from8, to3, tokenId, BigInt(amount || 1), "0x");
+    } else {
+      const c7 = new Contract(contract, ERC721_ABI, signer);
+      tx = await c7.safeTransferFrom(from8, to3, tokenId);
+    }
     await State2.pushHistory(net.chainId, from8, { hash: tx.hash, to: to3, from: from8, value: "0", ts: Date.now(), status: "pending", summary: `NFT #${tokenId}`, kind: "nft" });
     watchTx(net, from8, tx.hash);
     return tx.hash;
+  },
+  async sendNftBatch({ from: from8, to: to3, contract, tokenIds, amounts }) {
+    await ensureUnlocked();
+    const provider = await getProvider2();
+    const signer = keyring.signerFor(from8).connect(provider);
+    const c7 = new Contract(contract, ERC1155_ABI, signer);
+    const amts = (amounts && amounts.length === tokenIds.length ? amounts : tokenIds.map(() => 1)).map((a5) => BigInt(a5));
+    const tx = await c7.safeBatchTransferFrom(from8, to3, tokenIds, amts, "0x");
+    const net = await State2.currentNetwork();
+    await State2.pushHistory(net.chainId, from8, { hash: tx.hash, to: to3, from: from8, value: "0", ts: Date.now(), status: "pending", summary: `${tokenIds.length} NFTs`, kind: "nft" });
+    watchTx(net, from8, tx.hash);
+    return tx.hash;
+  },
+  async setAccountAvatar({ address, contract, tokenId, image }) {
+    const s3 = await State2.get();
+    await State2.set({ accountAvatars: { ...s3.accountAvatars, [address.toLowerCase()]: { contract, tokenId: String(tokenId), image } } });
+    return true;
+  },
+  async clearAccountAvatar({ address }) {
+    const s3 = await State2.get();
+    const accountAvatars = { ...s3.accountAvatars };
+    delete accountAvatars[address.toLowerCase()];
+    await State2.set({ accountAvatars });
+    return true;
+  },
+  async isNftApproved({ address, contract }) {
+    const net = await State2.currentNetwork();
+    const provider = await getProvider2(net);
+    return isApprovedForAllTg({ provider, token: contract, owner: address, spender: OPENSEA_SPENDER_TG }).catch(() => false);
+  },
+  async grantNftApproval({ from: from8, contract }) {
+    const tx = buildApprovalTx({ from: from8, token: contract, spender: OPENSEA_SPENDER_TG });
+    const gas = await gasOptionsFor(tx).catch(() => null);
+    return buildAndSend(applyGas(tx, gas ? gas.options.market : null), { summary: "Approve for OpenSea listing", kind: "approve" });
+  },
+  marketplaceChainSlug({ chainId }) {
+    return MARKETPLACE_TG.openSeaChainSlugs[Number(chainId)] || null;
   },
   /* ---- contacts / ENS ---- */
   async addContact({ name: name2, address, note }) {

@@ -197,22 +197,38 @@
 </div>
 <!-- ============ NFTs ============ -->
 <div class="screen hidden" data-view="nfts">
-<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="home"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">My NFTs</h2><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" id="btnAddNft" title="Import NFT">＋</button></div>
+<div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="home"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold">My NFTs</h2>
+<button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" id="btnScanNft" title="Scan for NFTs"><span data-icon="reload" data-icon-size="16"></span></button>
+<button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" id="btnAddNft" title="Import NFT">＋</button></div>
+<div class="segment nav nav-pills nav-fill gap-1 hidden" id="nftChainTabs"></div>
+<div class="d-flex justify-content-end" style="padding:0 14px 8px"><button class="link btn btn-link btn-sm text-decoration-none p-0" id="btnNftSelectMode">Select</button></div>
 <div id="paneNfts"><div class="nftgrid" id="nftGrid"></div></div>
+<div class="nftbatchbar hidden" id="nftBatchBar"><span id="nftBatchCount">0 selected</span><button class="primary btn btn-primary btn-sm rounded-pill fw-semibold" id="nftBatchSend">Send selected</button></div>
 </div>
 <div class="screen hidden" data-view="nftDetail">
 <div class="screen-head"><button class="iconbtn btn btn-sm btn-outline-secondary rounded-circle p-0 d-inline-flex align-items-center justify-content-center" data-back="nfts"><span data-icon="back" data-icon-size="18"></span></button><h2 class="fw-semibold" id="ndTitle">NFT</h2><span style="width:34px"></span></div>
+<div class="nftmedia" id="ndMediaWrap">
 <img alt="" class="nfthero" id="ndImage"/>
+<video class="nfthero hidden" controls id="ndVideo" playsinline></video>
+<div class="nfthero nftaudio hidden" id="ndAudioWrap"><audio controls id="ndAudio" style="width:100%"></audio></div>
+<model-viewer auto-rotate camera-controls class="nfthero hidden" id="ndModel" style="background:var(--bg-alt)"></model-viewer>
+</div>
 <h2 class="fw-semibold" id="ndName" style="margin-top:14px">—</h2>
 <div class="card alt border-0 shadow-sm">
 <div class="kv d-flex justify-content-between align-items-center py-1"><span>Contract</span><b class="mono" id="ndContract" style="font-size:11px"></b></div>
 <div class="kv d-flex justify-content-between align-items-center py-1"><span>Token ID</span><b id="ndTokenId"></b></div>
 <div class="kv d-flex justify-content-between align-items-center py-1"><span>Standard</span><b id="ndStandard"></b></div>
 <div class="kv d-flex justify-content-between align-items-center py-1"><span>Network</span><b id="ndNetwork"></b></div>
+<div class="kv d-flex justify-content-between align-items-center py-1 hidden" id="ndFloorRow"><span>Floor price</span><b id="ndFloor"></b></div>
 </div>
+<div class="proprow hidden" id="ndTraits" style="margin-top:12px"></div>
 <div class="btnrow" style="margin-top:14px">
 <button class="primary btn btn-primary rounded-pill fw-semibold" id="ndTransfer">Transfer</button>
 <button class="danger btn btn-outline-danger rounded-pill" id="ndRemove">Remove</button>
+</div>
+<div class="btnrow" style="margin-top:8px">
+<button class="btn btn-outline-secondary rounded-pill" id="ndSetAvatar">Set as avatar</button>
+<button class="btn btn-outline-secondary rounded-pill" id="ndListMarketplace">List on OpenSea</button>
 </div>
 <button class="link btn btn-link text-decoration-none" id="ndExplorer" style="width:100%;margin-top:8px">View on explorer</button>
 </div>
@@ -555,6 +571,11 @@
 <label>Project ID</label><input class="form-control" id="setWcProjectId" placeholder="from cloud.reown.com"/>
 <div class="muted">Required for pairing. Get a free one at cloud.reown.com — do not ship a shared demo ID.</div>
 </div>
+<h3 class="fw-semibold">NFT data</h3>
+<div class="setgroup" style="padding:0 14px 14px">
+<label>Alchemy API key</label><input class="form-control" id="setAlchemyKey" placeholder="from alchemy.com/nft-api"/>
+<div class="muted">Optional — enables automatic NFT discovery, floor price and rarity. Get a free key at alchemy.com.</div>
+</div>
 <h3 class="fw-semibold">Swap</h3>
 <div class="setgroup" style="padding:0 14px 14px">
 <label>Provider</label>
@@ -699,6 +720,7 @@
 </details>
 <button class="primary btn btn-primary rounded-pill fw-semibold" id="gasSave" style="width:100%;margin-top:12px">Save</button>
 <button class="link btn btn-link text-decoration-none" data-close-sheet="1" style="width:100%">Cancel</button></div></div>
+<script src="vendor/model-viewer.min.js" type="module"></script>
 <script src="popup.js" type="module"></script>
 </body>
 </html>
