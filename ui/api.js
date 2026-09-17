@@ -1,10 +1,10 @@
 function getChromeObj() {
   if (typeof chrome !== 'undefined' && chrome?.runtime?.sendMessage) return chrome;
   if (typeof window !== 'undefined') {
-    try { if (window.chrome?.runtime?.sendMessage) return window.chrome; } catch {}
-    try { if (window.parent && window.parent.chrome?.runtime?.sendMessage) return window.parent.chrome; } catch {}
-    try { if (window.top && window.top.chrome?.runtime?.sendMessage) return window.top.chrome; } catch {}
-    try { if (window.opener && window.opener.chrome?.runtime?.sendMessage) return window.opener.chrome; } catch {}
+    try { if (window.chrome?.runtime?.sendMessage) return window.chrome; } catch { }
+    try { if (window.parent && window.parent.chrome?.runtime?.sendMessage) return window.parent.chrome; } catch { }
+    try { if (window.top && window.top.chrome?.runtime?.sendMessage) return window.top.chrome; } catch { }
+    try { if (window.opener && window.opener.chrome?.runtime?.sendMessage) return window.opener.chrome; } catch { }
   }
   if (typeof globalThis !== 'undefined' && globalThis.chrome?.runtime?.sendMessage) return globalThis.chrome;
   return null;
@@ -33,7 +33,7 @@ export async function call(method, params = {}) {
   // A rejected/failed background call (e.g. a send that reverted) must reach the caller as a
   // thrown error - every call site that shows a real error toast (unlock, send, swap, ...)
   // does `try { await call(...) } catch (e) { toast(e.message) }` expecting exactly this. This
-  // used to throw and then immediately get caught by the try/catch above it was written in,
+  // used to throw dasdasdasdasdaand then immediately get caught by the try/catch above it was written in,
   // silently turning every failure into `null` - callers had no way to tell success from
   // failure, so a failed send still fell through to the "Transaction Submitted!" screen with an
   // empty hash instead of showing the actual error.
