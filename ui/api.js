@@ -33,7 +33,7 @@ export async function call(method, params = {}) {
   // A rejected/failed background call (e.g. a send that reverted) must reach the caller as a
   // thrown error - every call site that shows a real error toast (unlock, send, swap, ...)
   // does `try { await call(...) } catch (e) { toast(e.message) }` expecting exactly this. This
-  // used to throw dasdasdasdasdaand then immediately get caught by the try/catch above it was written in,
+  // used to throw  then immediately get caught by the try/catch above it was written in,
   // silently turning every failure into `null` - callers had no way to tell success from
   // failure, so a failed send still fell through to the "Transaction Submitted!" screen with an
   // empty hash instead of showing the actual error.
